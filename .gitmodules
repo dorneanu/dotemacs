@@ -1,0 +1,33 @@
+[submodule "a13"]
+	path = a13
+	url = https://github.com/a13/emacs.d
+[submodule "dakra-dmacs"]
+	path = dakra-dmacs
+	url = https://github.com/dakra/dmacs
+[submodule "novoid-dotemacs"]
+	path = novoid-dotemacs
+	url = https://github.com/novoid/dot-emacs
+[submodule "protesilaos-dotfiles"]
+	path = protesilaos-dotfiles
+	url = https://git.sr.ht/~protesilaos/dotfiles/
+[submodule "rasendubi-dotfiles"]
+	path = rasendubi-dotfiles
+	url = https://github.com/rasendubi/dotfiles
+[submodule "rememberYou-emacs.d"]
+	path = rememberYou-emacs.d
+	url = https://github.com/rememberYou/.emacs.d
+[submodule "SqrtMinusOne-dotfiles"]
+	path = SqrtMinusOne-dotfiles
+	url = https://github.com/SqrtMinusOne/dotfiles
+[submodule "sriramkswamy-dotemacs"]
+	path = sriramkswamy-dotemacs
+	url = https://github.com/sriramkswamy/dotemacs
+[submodule "tecosaur-emacs"]
+	path = tecosaur-emacs
+	url = https://github.com/tecosaur/emacs-config
+[submodule "howardabrams-dotfiles"]
+	path = howardabrams-dotfiles
+	url = https://github.com/howardabrams/dot-files
+[submodule "a13-emacs.d"]
+	path = a13-emacs.d
+	url = https://github.com/a13/emacs.d
