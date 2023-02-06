@@ -1,0 +1,9 @@
+Collection of interesting Emacs configuration. Some of them are in ORG mode, some just pure Elisp.
+Either way you can easily clone this repository and the submodules using:
+
+#+begin_src sh
+git clone --recursive https://github.com/dorneanu/dotemacs.git
+#+end_src
+
+Then you can use use ~grep / ripgrep~ to search for certain functionalities
+if you're not sure how to implement them right.
