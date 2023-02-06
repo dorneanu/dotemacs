@@ -1,0 +1,256 @@
+* c-mode
+:PROPERTIES:
+:INCLUDE:  Curly brace
+:END:
+Generally I use OTBS for my own code in curly braced language, including =C=.
+** inc: include self-defined header files :src:
+#+begin_src c
+  #include "${1:`(my/c-header-filename-to-this)`}"$0
+#+end_src
+
+** incl: include library :src:
+#+begin_src c
+  #include <${1:stdio.h}>$0
+#+end_src
+
+** stru: typedef struct :src:
+typedef an anonymous struct with a named alias.
+#+begin_src c
+  typedef struct {
+      $0
+  } ${1:Stru};
+#+end_src
+
+** enum: typedef enum :src:
+Using the enum name both after the =enum= keyword and as the =typedef= alias make it compatible with both C and C++.
+#+begin_src c
+  typedef enum ${1:Enum} {
+      $0
+  } $1;
+#+end_src
+
+** main: main :src:
+OTBS style main
+#+begin_src c
+  int main(int argc, char *argv[]) {
+      $0
+  }
+#+end_src
+
+** C header :src:
+C header that can be linked by C++.
+#+begin_src c
+  #ifndef ${1:`(my/c-header-filename-macro)`}
+  #define $1
+
+  #ifdef __cplusplus
+  extern "C" {
+  #endif
+
+  $0
+
+  #ifdef __cplusplus
+  }
+  #endif
+
+  #endif  /* $1 */
+#+end_src
+
+* Curly brace
+** if: curly braced if :src:wrap:
+#+begin_src c
+  if ($1) {
+      $0
+  }
+#+end_src
+
+** ife: curly braced if else :src:wrap:
+#+begin_src c
+  if ($1) {
+      $2
+  } else {
+      $0
+  }
+#+end_src
+
+** for: curly braced for loop :src:wrap:
+#+begin_src c
+  for (${1:int i = 0}; ${2}; ${3:++i}) {
+      $0
+  }
+#+end_src
+
+** while: curly braced while loop :src:wrap:
+#+begin_src c
+  while (${1:1}) {
+      $0
+  }
+#+end_src
+
+** dowhile: curly braced do while loop :src:wrap:
+#+begin_src c
+  do {
+      $0
+  } while (${1:1})
+#+end_src
+
+* org-mode
+** ex: example
+#+begin_example
+$0
+#+end_example
+
+** quo: quote :wrap:
+#+begin_quote
+$0
+#+end_quote
+
+** elisp: elisp src block
+#+begin_src emacs-lisp$1
+$0
+#+end_src
+
+** dot: graphviz dot src block
+#+begin_src dot$1
+$0
+#+end_src
+
+* rust-mode
+** rst: rust result :src:wrap::
+#+begin_src rust
+  Result<$0>
+#+end_src
+
+** opt: rust option :src:wrap::
+#+begin_src rust
+  Option<$0>
+#+end_src
+
+** as: explicit type annotation :src:wrap:
+#+begin_src rust
+  <${1:Self} as $2>::$0
+#+end_src
+
+** stru: rust struct :src:wrap:
+#+begin_src rust
+  struct $1${2: {
+      $0
+  }}
+#+end_src
+
+** enum: rust enum :src:wrap:
+#+begin_src rust
+  enum $1 {
+      $0
+  }
+#+end_src
+
+** tfn: rust test fn block :src:
+#+begin_src rust
+  #[test]
+  fn $1()${2: -> Result<(), ${3:Error}>} {
+      $0
+  }
+#+end_src
+
+** test: rust test block :src::
+#+begin_src rust
+  #[cfg(test)]
+  mod tests {
+      use super::*;
+
+      $0
+  }
+#+end_src
+
+** let: rust let binding :src:wrap::
+#+begin_src rust
+  let $1 = $0;
+#+end_src
+
+** default: impl default :src:wrap:
+#+begin_src rust
+  impl Default for $1 {
+      #[must_use]
+      fn default() -> Self {
+          ${2:Self {
+              $0
+          }}
+      }
+  }
+#+end_src
+
+** blk: block with semi column :src:wrap:
+#+begin_src rust
+  {
+      $0
+  };
+#+end_src
+
+** bl: block :src:wrap:
+#+begin_src rust
+  {
+      $0
+  }
+#+end_src
+
+** derive: derive macro :src:
+#+begin_src rust
+  #[derive(${1:Debug}$2)]
+#+end_src
+
+** cls: rust closure :src:wrap:
+#+begin_src rust
+  |$1| {
+      $0
+  }
+#+end_src
+
+** cl: rust inline closure :src:wrap:
+#+begin_src rust
+  |$1| $0
+#+end_src
+
+** dbg: rust dbg! macro :src:wrap:
+#+begin_src rust
+  dbg!($0)
+#+end_src
+
+** impl: rust impl block :src:wrap:
+#+begin_src rust
+  impl $1${2: for $3} {
+      $0
+  }
+#+end_src
+
+** fnS: rust consuming method :src:wrap:
+#+begin_src rust
+  fn $1(self${2:})${3: -> $4} {
+      $0
+  }
+#+end_src
+
+** fnms: rust mutable method :src:wrap:
+#+begin_src rust
+  fn $1(&mut self${2:})${3: -> $4} {
+      $0
+  }
+#+end_src
+
+** fns: rust method :src:wrap:
+#+begin_src rust
+  fn $1(&self${2:})${3: -> $4} {
+      $0
+  }
+#+end_src
+
+** fn: rust private function :src:wrap:
+#+begin_src rust
+  fn $1($2)${3: -> $4} {
+      $0
+  }
+#+end_src
+
+* Default :global:
+** lorem: lorem ipsum
+Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.

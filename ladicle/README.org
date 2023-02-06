@@ -1,0 +1,167 @@
+#+title: Ladicle's Emacs Configuration ver.2022
+
+[[file:https://user-images.githubusercontent.com/1159133/156761456-4be104ae-4cb3-420e-81c7-8abd00497d51.png]]
+
+* Outline
+** Package Management [[https://gist.github.com/Ladicle/119c57fc97439c1b103f7847aa03be52#file-init-el-L14][(link)]]
+ - leaf-keywords
+   - el-get
+   - hydra
+ - package-utils
+** Core [[https://gist.github.com/Ladicle/119c57fc97439c1b103f7847aa03be52#file-init-el-L68][(link)]]
+ - *byte-compile
+ - *native-compile
+ - no-littering
+ - *to-be-quiet
+ - *server
+ - *encoding
+ - *formatting
+ - *autorevert
+ - *recovery
+ - *tramp
+ - *savehist
+ - *recentf
+ - *large-file
+ - *delsel
+ - undo-fu
+** Window System [[https://gist.github.com/Ladicle/119c57fc97439c1b103f7847aa03be52#file-init-el-L166][(link)]]
+ - *adjust-frame-position
+ - font-for-gui
+ - mouse
+** MacOS [[https://gist.github.com/Ladicle/119c57fc97439c1b103f7847aa03be52#file-init-el-L229][(link)]]
+ - mozc
+   - mozc-posframe
+ - *pbcopy-and-pbpaste
+ - exec-path-from-shell
+** Editing -- Cursor/Custom Fn [[https://gist.github.com/Ladicle/119c57fc97439c1b103f7847aa03be52#file-init-el-L328][(link)]]
+ - smartparens
+ - *convert-letter-case
+ - *smart-kill
+ - *copy-info-to-clipboard
+ - *chmod-executable-file
+ - *general-cursor-options
+ - mwim
+ - avy
+   - avy-zap
+ - ace-window
+** Window Layout [[https://gist.github.com/Ladicle/119c57fc97439c1b103f7847aa03be52#file-init-el-L474][(link)]]
+ - rotate
+ - presentation
+ - *window-maximizer
+ - *window-transparency
+** Error Checker [[https://gist.github.com/Ladicle/119c57fc97439c1b103f7847aa03be52#file-init-el-L535][(link)]]
+ - flycheck
+ - flyspell
+   - flyspell-correct
+** Completion [[https://gist.github.com/Ladicle/119c57fc97439c1b103f7847aa03be52#file-init-el-L572][(link)]]
+ - yasnippet
+ - company
+** Tools [[https://gist.github.com/Ladicle/119c57fc97439c1b103f7847aa03be52#file-init-el-L610][(link)]]
+ - docker
+ - docker-tramp
+*** Git
+ - *git-commit-mode
+ - git-modes
+ - magit
+ - git-gutter
+ - browse-at-remote
+ - smerge-mode
+** Programming [[https://gist.github.com/Ladicle/119c57fc97439c1b103f7847aa03be52#file-init-el-L712][(link)]]
+ - quickrun
+ - lsp-mode
+   - lsp-ui
+   - dap-mode
+ - rustic
+ - go-mode
+   - gotest
+   - go-gen-test
+   - go-eldoc
+   - go-tag
+ - python
+   - lsp-pyright
+   - yapfify
+ - cc-mode
+   - ccls
+   - modern-cpp-font-lock
+ - js2-mode
+   - typescript-mode
+ - fish-mode
+** Configuration Language [[https://gist.github.com/Ladicle/119c57fc97439c1b103f7847aa03be52#file-init-el-L999][(link)]]
+ - yaml-mode
+ - systemd
+ - protobuf-mode
+ - dockerfile-mode
+ - terraform-mode
+** Plain Text & Drawing [[https://gist.github.com/Ladicle/119c57fc97439c1b103f7847aa03be52#file-init-el-L1053][(link)]]
+ - gnuplot
+ - markdown-mode
+ - markdown-toc
+*** Org
+ - org
+ - org-theme
+ - org-bullets
+ - org-modern
+ - *org-agenda
+ - ox-hugo
+ - ox-qmd
+ - org-babel
+ - ob-async
+ - ob-go
+ - org-journal
+ - *org-capture
+ - org-protocol
+ - org-download
+ - *org-screenshot
+ - company-org-block
+ - *org-hydra
+** Theme [[https://gist.github.com/Ladicle/119c57fc97439c1b103f7847aa03be52#file-init-el-L1576][(link)]]
+ - doom-themes
+   - doom-theme-for-term
+ - nano-modeline
+ - *cursor-style
+** Widgets [[https://gist.github.com/Ladicle/119c57fc97439c1b103f7847aa03be52#file-init-el-L1646][(link)]]
+ - all-the-icons
+ - neotree
+ - imenu-list
+** Accessibility [[https://gist.github.com/Ladicle/119c57fc97439c1b103f7847aa03be52#file-init-el-L1724][(link)]]
+ - *hydra-theme
+   - major-mode-hydra
+   - hydra-posframe
+ - which-key
+ - visual-fill-column
+ - display-fill-column-indicator-mode
+ - display-line-numbers
+ - rainbow-mode
+ - rainbow-delimiters
+** Highlighting [[https://gist.github.com/Ladicle/119c57fc97439c1b103f7847aa03be52#file-init-el-L1795][(link)]]
+ - *paren
+ - highlight-symbol
+ - volatile-highlights
+ - *highlight-whitespace
+ - highlight-indent-guides
+ - hl-todo
+ - beacon
+** Search Interface [[https://gist.github.com/Ladicle/119c57fc97439c1b103f7847aa03be52#file-init-el-L1861][(link)]]
+ - migemo
+ - anzu
+ - projectile
+ - vertico
+   - vertico-posframe
+ - consult
+   - consult-flycheck
+   - affe
+   - consult-ghq
+   - consult-custom
+ - marginalia
+ - orderless
+ - embark
+   - embark-consult
+** Key Bindings [[https://gist.github.com/Ladicle/119c57fc97439c1b103f7847aa03be52#file-init-el-L2000][(link)]]
+ - *custom-binding-maps
+ - *global-bindings
+ - *hydra-goto
+ - *hydra-toggle
+ - *hydra-toggle-markdown1
+ - *hydra-search
+ - *hydra-git
+ - *hydra-shortcuts3
