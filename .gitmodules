@@ -31,6 +31,6 @@
 [submodule "a13-emacs.d"]
 	path = a13-emacs.d
 	url = https://github.com/a13/emacs.d
-[submodule "fbkarsdorp-emacs.d"]
-	path = fbkarsdorp-emacs.d
+[submodule "fbkarsdorp-emacsd"]
+	path = fbkarsdorp-emacsd
 	url = https://github.com/fbkarsdorp/.emacs.d
