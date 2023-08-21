@@ -1,0 +1,1926 @@
+*Wai Hon's Blog*
+[[/][Home]] | [[/emacs-config][Emacs]] | [[/tags][Tags]] | [[/about][About]] | [[/subscribe][Subscribe]]
+
+* Emacs Config
+:PROPERTIES:
+:CUSTOM_ID: emacs-config
+:END:
+*Table of Contents*
+- [[#general][General]]
+  - [[#startup][Startup]]
+  - [[#hydra][Hydra]]
+  - [[#quitting][Quitting]]
+  - [[#backups][Backups]]
+  - [[#disable-native-compilation-warnings][Disable Native Compilation
+    Warnings]]
+  - [[#miscellaneous][Miscellaneous]]
+- [[#editing][Editing]]
+  - [[#remove-key-bindings][Remove Key Bindings]]
+  - [[#text-mode-and-prog-mode][Text Mode and Prog Mode]]
+  - [[#delete-trailing-whitespaces-except-current-line][Delete Trailing
+    Whitespaces Except Current Line]]
+  - [[#ignore-save-buffer-unless-visiting-a-file][Ignore =save-buffer=
+    unless visiting a file]]
+  - [[#auto-save-and-auto-revert][Auto Save and Auto Revert]]
+  - [[#modern-editor-behavior][Modern Editor Behavior]]
+  - [[#smooth-scrolling][Smooth Scrolling]]
+  - [[#moving-lines][Moving Lines]]
+  - [[#sentence-end-with-single-space][Sentence End with Single Space]]
+  - [[#indent-with-space][Indent with Space]]
+  - [[#rename-file-and-buffer-together][Rename File and Buffer
+    Together]]
+  - [[#delete-file-and-buffer-together][Delete File and Buffer
+    Together]]
+  - [[#edit-file-as-root][Edit File as Root]]
+  - [[#insert-snippets][Insert Snippets]]
+  - [[#tramp][Tramp]]
+  - [[#case-sensitive-replace-string][Case-sensitive =replace-string=]]
+- [[#appearance][Appearance]]
+  - [[#modus-theme][Modus Theme]]
+  - [[#doom-modeline][Doom Modeline]]
+- [[#window-management][Window Management]]
+  - [[#winner-mode][Winner Mode]]
+  - [[#window-navigation][Window Navigation]]
+  - [[#window-dedication][Window Dedication]]
+  - [[#focus-to-new-window-after-split][Focus to new Window after
+    Split]]
+  - [[#tab-bar-mode][Tab Bar Mode]]
+- [[#discoverability][Discoverability]]
+  - [[#completion-with-vertico][Completion with =vertico=]]
+  - [[#consult][Consult]]
+  - [[#embark-and-marginalia][Embark & Marginalia]]
+  - [[#hydra-consult-menu][Hydra Consult Menu]]
+  - [[#which-key][which-key]]
+- [[#org-mode][Org-mode]]
+  - [[#org-files][Org Files]]
+  - [[#org-basic][Org Basic]]
+  - [[#capturing][Capturing]]
+  - [[#attachment][Attachment]]
+  - [[#task-management][Task Management]]
+  - [[#org-breadcrumb][Org Breadcrumb]]
+  - [[#literate-programming-with-org-babel][Literate Programming with
+    Org-Babel]]
+  - [[#respect-content-when-inserting-heading][Respect Content When
+    Inserting Heading]]
+  - [[#clocking][Clocking]]
+  - [[#images][Images]]
+- [[#personal-knowledge-management][Personal Knowledge Management]]
+  - [[#note-taking-with-denote][Note Taking with =denote=]]
+  - [[#blogging-with-ox-hugo][Blogging with ox-hugo]]
+  - [[#exporting-notes][Exporting Notes]]
+  - [[#spaced-repetition-with-org-drill][Spaced Repetition with
+    org-drill]]
+- [[#reading][Reading]]
+  - [[#dictionary][Dictionary]]
+  - [[#google-translate][Google Translate]]
+  - [[#pdf][PDF]]
+- [[#writing][Writing]]
+  - [[#synonyms][Synonyms]]
+  - [[#write-good][Write Good]]
+- [[#programming][Programming]]
+  - [[#magit][Magit]]
+  - [[#diff-highlight][Diff Highlight]]
+  - [[#terminal][Terminal]]
+  - [[#snippet-template-with-yasnippet][Snippet Template with
+    =yasnippet=]]
+  - [[#make-script-files-executable-automatically][Make Script Files
+    Executable Automatically]]
+  - [[#yaml-mode][YAML Mode]]
+  - [[#web-mode][Web Mode]]
+  - [[#markdown-mode][Markdown Mode]]
+  - [[#company-mode][Company Mode]]
+  - [[#lsp-mode][LSP Mode]]
+  - [[#caddyfile-mode][Caddyfile Mode]]
+- [[#competitive-programming][Competitive Programming]]
+  - [[#auto-insert-the-c-plus-plus-template][Auto Insert the C++
+    Template]]
+  - [[#compile-and-run][Compile and Run]]
+- [[#project-management][Project Management]]
+  - [[#project][Project]]
+  - [[#treemacs][Treemacs]]
+- [[#chinese-support][Chinese Support]]
+  - [[#rime-input-method][Rime Input Method]]
+  - [[#cjk-word-wrap][CJK Word Wrap]]
+  - [[#better-cjk-font][Better CJK Font]]
+- [[#file-management][File Management]]
+  - [[#dirvish][Dirvish]]
+- [[#gnupg-passphrase-via-minibuffer][GnuPG Passphrase Via Minibuffer]]
+- [[#emacs-29][Emacs 29]]
+
+This is my public Emacs configuration.
+
+** General
+:PROPERTIES:
+:CUSTOM_ID: general
+:END:
+*** Startup
+:PROPERTIES:
+:CUSTOM_ID: startup
+:END:
+
+#+begin_src chroma :tabindex 0
+;; Increase the garbage collection threshold to 100MB to reduced startup time.
+;; See https://www.reddit.com/r/emacs/comments/3kqt6e
+(setq gc-cons-threshold (* 1024 1024 100))
+
+;; Turn off mouse interface early in startup to avoid momentary display
+(menu-bar-mode -1)
+(tooltip-mode -1)
+
+;; On Emacs without X, tool-bar-mode and scroll-bar-mode are not defined.
+(when (fboundp 'tool-bar-mode)
+  (tool-bar-mode -1))
+(when (fboundp 'scroll-bar-mode)
+  (scroll-bar-mode -1))
+
+;; Show column number in the mode line.
+(column-number-mode)
+
+;; Inhibit the startup screen and shorten the scratch buffer's message.
+(setq inhibit-startup-screen t)
+(setq initial-scratch-message ";; scratch buffer\n\n")
+#+end_src
+
+*** Hydra
+:PROPERTIES:
+:CUSTOM_ID: hydra
+:END:
+Make sure Hydra is ready before the =defhydra= below. Also see
+[[https://github.com/abo-abo/hydra/wiki/Hydras-by-Topic]].
+
+#+begin_src chroma :tabindex 0
+(use-package hydra
+  :commands defhydra)
+#+end_src
+
+*** Quitting
+:PROPERTIES:
+:CUSTOM_ID: quitting
+:END:
+A popular recommendation is to bind =<escape>= with
+=keyboard-escape-quit=. However, it closes all the other windows at the
+same time and it is annoying to me. Instead, I map =<escape>= to
+=keyboard-quit=.
+
+#+begin_src chroma :tabindex 0
+;; Don't forget to handle minibuffer with "minibuffer-keyboard-quit".
+(global-set-key (kbd "<escape>") 'keyboard-quit)
+
+;; Avoid entering the ~repeat-complex-cammand~ when quiting everything with ~C-x~.
+(global-unset-key (kbd "C-x <escape> <escape>")) ; repeat-complex-command
+#+end_src
+
+An even better way is to build muscle memory to use the
+[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Quitting.html][standard]]
+=C-g= to “quit” and =C-]= to “abort”.
+
+*** Backups
+:PROPERTIES:
+:CUSTOM_ID: backups
+:END:
+I don't use backup files often as I use git to manage most of my org
+files. However, I still feel safer when having a backup. I follow the
+backup configuration from
+[[https://pages.sachachua.com/.emacs.d/Sacha.html#org3b6b03f][Sacha
+Chua]] to enable Emacs's backups aggressively.
+
+#+begin_src chroma :tabindex 0
+;; Save backup files to a dedicated directory.
+(setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
+(setq delete-old-versions -1)
+
+;; Make numeric backup versions unconditionally.
+(setq version-control t)
+(setq vc-make-backup-files t)
+(setq auto-save-file-name-transforms '((".*" "~/.emacs.d/auto-save-list/" t)))
+
+;; Do not create lock files.
+(setq create-lockfiles nil)
+#+end_src
+
+*** Disable Native Compilation Warnings
+:PROPERTIES:
+:CUSTOM_ID: disable-native-compilation-warnings
+:END:
+
+#+begin_src chroma :tabindex 0
+(setq native-comp-async-report-warnings-errors nil)
+#+end_src
+
+*** Miscellaneous
+:PROPERTIES:
+:CUSTOM_ID: miscellaneous
+:END:
+
+#+begin_src chroma :tabindex 0
+;; Use year/month/day
+(setq calendar-date-style 'iso)
+
+(xterm-mouse-mode +1)
+
+;; Remember and restore the last cursor location of opened files
+(save-place-mode 1)
+
+;; Don't pop up UI dialogs when prompting
+(setq use-dialog-box nil)
+
+;; Disable the alarm bell (https://www.emacswiki.org/emacs/AlarmBell).
+(setq ring-bell-function 'ignore)
+
+;; Use shorter "y" or "n" to confirm killing emacs.
+(setq confirm-kill-emacs 'y-or-n-p)
+#+end_src
+
+** Editing
+:PROPERTIES:
+:CUSTOM_ID: editing
+:END:
+*** Remove Key Bindings
+:PROPERTIES:
+:CUSTOM_ID: remove-key-bindings
+:END:
+I disable most Emacs's default keybinding because I am not able to get
+my muscle memory to work with it. Even if I do, that muscle memory
+probably will cause trouble when editing in other applications.
+
+#+begin_src chroma :tabindex 0
+;; Disabe some Emacs's default keybindings.
+(global-unset-key (kbd "C-v"))  ; scroll-up-command
+(global-unset-key (kbd "M-v"))  ; scroll-down-command
+(global-unset-key (kbd "C-n"))  ; next line
+(global-unset-key (kbd "C-p"))  ; previous line
+(global-unset-key (kbd "C-b"))  ; previous char
+(global-unset-key (kbd "C-f"))  ; next char
+(global-unset-key (kbd "C-t"))  ; switch char
+(global-unset-key (kbd "C-l"))  ; recenter
+(global-unset-key (kbd "C-j"))  ; (electric-newline-and-maybe-indent)
+(global-unset-key (kbd "M-l"))  ; downcase-word
+(global-unset-key (kbd "M-u"))  ; upcase-wrod
+
+;; Disable the "numeric argument". When used, I use the =C-u= prefix.
+(dolist (prefix '("M-" "C-M-"))
+  (global-unset-key (kbd (concat prefix "-")))
+  (dotimes (i 10)
+    (global-unset-key (kbd (concat prefix (number-to-string i))))))
+#+end_src
+
+*** Text Mode and Prog Mode
+:PROPERTIES:
+:CUSTOM_ID: text-mode-and-prog-mode
+:END:
+I defined my own =my/text-mode= and =my/prog-mode= which enable several
+minor modes and key bindings.
+
+I avoid global settings like =global-display-line-numbers-mode= and only
+enable stuff when I need to, like in =prog-mode=. I use global settings
+only if that is globally applicable everywhere.
+
+#+begin_src chroma :tabindex 0
+(defun my/edit-mode ()
+  (visual-line-mode +1)               ; enable "word-wrap"
+  (toggle-truncate-lines -1)
+  ;; (hl-line-mode +1)
+  (local-set-key (kbd "C-S-s") 'write-file)
+  (setq cursor-type 'bar)
+  (setq show-trailing-whitespace t))
+
+(defun my/text-mode ()
+  (my/edit-mode)
+  (goto-address-mode +1)
+  (flyspell-mode))
+
+(defun my/prog-mode ()
+  (display-line-numbers-mode +1)
+  (my/edit-mode)
+  (show-paren-mode +1)
+  (goto-address-prog-mode +1)
+  (flyspell-prog-mode))
+
+(add-hook 'text-mode-hook 'my/text-mode)
+(add-hook 'prog-mode-hook 'my/prog-mode)
+(add-hook 'conf-mode-hook 'my/prog-mode)
+
+;; Removes the overlay properties which flyspell uses on incorrect words for mouse operations.
+;; https://emacs.stackexchange.com/a/55708
+(defun make-flyspell-overlay-return-mouse-stuff (overlay)
+  (overlay-put overlay 'help-echo nil)
+  (overlay-put overlay 'keymap nil)
+  (overlay-put overlay 'mouse-face nil))
+(advice-add 'make-flyspell-overlay :filter-return #'make-flyspell-overlay-return-mouse-stuff)
+#+end_src
+
+*** Delete Trailing Whitespaces Except Current Line
+:PROPERTIES:
+:CUSTOM_ID: delete-trailing-whitespaces-except-current-line
+:END:
+I hook this function with =my/save-buffer=.
+
+#+begin_src chroma :tabindex 0
+;; Remove trailing whitespace except current line.
+;; https://stackoverflow.com/a/35781486/1747877
+(defun my/delete-trailing-whitespace-except-current-line ()
+  "Delete trailing whitespace in the whole buffer, except on the current line.
+  The current line exception is because we do want to remove any whitespace
+  on the current line on saving the file (`before-save-hook') while we are
+  in-between typing something.
+
+  Do not do anything if `do-not-delete-trailing-whitespace' is non-nil."
+  (interactive)
+  (when (not (bound-and-true-p do-not-delete-trailing-whitespace))
+    (delete-trailing-whitespace (point-min) (line-beginning-position))
+    (delete-trailing-whitespace (line-end-position) (point-max))))
+
+(add-hook 'before-save-hook #'my/delete-trailing-whitespace-except-current-line)
+#+end_src
+
+*** Ignore =save-buffer= unless visiting a file
+:PROPERTIES:
+:CUSTOM_ID: ignore-save-buffer-unless-visiting-a-file
+:END:
+See [[https://whhone.com/posts/my-save-buffer][my blog post]].
+
+#+begin_src chroma :tabindex 0
+(defun my/save-buffer (&optional arg)
+  "Like `save-buffer', but does nothing if buffer is not visiting a file."
+  (interactive "p")
+  (unless (or (buffer-file-name)                       ; regular buffer
+              (buffer-file-name (buffer-base-buffer))) ; indirect buffer
+    (user-error "Use 'M-x save-buffer' to save this buffer."))
+  (progn
+    (my/delete-trailing-whitespace-except-current-line)
+    (save-buffer arg)))
+
+(global-set-key [remap save-buffer] #'my/save-buffer)
+#+end_src
+
+*** Auto Save and Auto Revert
+:PROPERTIES:
+:CUSTOM_ID: auto-save-and-auto-revert
+:END:
+[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Auto-Save.html][Auto-save]]
+and
+[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Auto-Revert.html][auto-revert]]
+cause less conflict when editing files synchronized on multiple
+computers.
+
+#+begin_src chroma :tabindex 0
+;; Auto save buffer if idled for 2 seconds.
+(setq auto-save-timeout 2)
+(auto-save-visited-mode 1)
+
+;; Watch and reload the file changed on the disk.
+(global-auto-revert-mode 1)
+(setq auto-revert-remote-files t)
+
+;; Use a timer instead of file notification.
+;;
+;; File notification is does not work on Emacs 29.1.2, and is not
+;; supported on all file systems.
+(setq auto-revert-use-notify nil
+      auto-revert-interval 5)
+#+end_src
+
+*** Modern Editor Behavior
+:PROPERTIES:
+:CUSTOM_ID: modern-editor-behavior
+:END:
+These configurations modernize Emacs.
+
+#+begin_src chroma :tabindex 0
+;; Delete the selected text first before editing.
+(delete-selection-mode +1)
+
+;; Mouse middle-click yanks where the point is, not where the mouse is.
+(setq mouse-yank-at-point t)
+#+end_src
+
+*** Smooth Scrolling
+:PROPERTIES:
+:CUSTOM_ID: smooth-scrolling
+:END:
+The default Emacs scrolling behavior is really weird and different from
+other modern editors. However, the result is still not ideal. We might
+need to wait for the pixel-based scrolling coming with Emacs 29.
+
+#+begin_src chroma :tabindex 0
+;; Smooth Scrolling: https://www.emacswiki.org/emacs/SmoothScrolling
+(setq scroll-conservatively 10000
+      scroll-step 1)
+#+end_src
+
+*** Moving Lines
+:PROPERTIES:
+:CUSTOM_ID: moving-lines
+:END:
+Moving lines up and down are very common editing operations to me. This
+[[https://stackoverflow.com/questions/2423834/move-line-region-up-and-down-in-emacs][stackoverflow
+entry]] has more fancy answers but these two are exactly what I need.
+
+#+begin_src chroma :tabindex 0
+;; move line up
+(defun my/move-line-up ()
+  (interactive)
+  (transpose-lines 1)
+  (previous-line 2))
+(global-set-key [(meta shift up)] 'my/move-line-up)
+
+;; move line down
+(defun my/move-line-down ()
+  (interactive)
+  (next-line 1)
+  (transpose-lines 1)
+  (previous-line 1))
+
+(global-set-key [(meta shift down)] 'my/move-line-down)
+#+end_src
+
+- try [[https://github.com/rejeep/drag-stuff.el][drag-stuff.el]]
+
+*** Sentence End with Single Space
+:PROPERTIES:
+:CUSTOM_ID: sentence-end-with-single-space
+:END:
+By default, Emacs treat a period followed by double spaces as the end of
+sentence. This is old-fashioned and uncommon now.
+
+#+begin_src chroma :tabindex 0
+(setq sentence-end-double-space nil)
+#+end_src
+
+*** Indent with Space
+:PROPERTIES:
+:CUSTOM_ID: indent-with-space
+:END:
+
+#+begin_src chroma :tabindex 0
+(setq-default indent-tabs-mode nil)
+#+end_src
+
+*** Rename File and Buffer Together
+:PROPERTIES:
+:CUSTOM_ID: rename-file-and-buffer-together
+:END:
+See [[https://emacs.readthedocs.io/en/latest/file_management.html]].
+
+#+begin_src chroma :tabindex 0
+;; rename-visited-file is introduced in Emacs 29.
+(unless (fboundp 'rename-visited-file)
+  (defun rename-visited-file ()
+    "Renames the current buffer and the file it is visiting."
+    (interactive)
+    (let ((name (buffer-name))
+          (filename (buffer-file-name)))
+      (if (not (and filename (file-exists-p filename)))
+          (error "Buffer '%s' is not visiting a file!" name)
+        (let ((new-name (read-file-name "New name: " filename)))
+          (if (get-buffer new-name)
+              (error "A buffer named '%s' already exists!" new-name)
+            (rename-file filename new-name 1)
+            (rename-buffer new-name)
+            (set-visited-file-name new-name)
+            (set-buffer-modified-p nil)
+            (message "File '%s' successfully renamed to '%s'"
+                     name (file-name-nondirectory new-name))))))))
+
+(global-set-key (kbd "C-x R") 'rename-visited-file)
+#+end_src
+
+*** Delete File and Buffer Together
+:PROPERTIES:
+:CUSTOM_ID: delete-file-and-buffer-together
+:END:
+See [[http://emacsredux.com/blog/2013/04/03/delete-file-and-buffer/]].
+If you like this command, it worth taking a look at
+[[https://github.com/bbatsov/crux][crux]] package as well for similar
+useful collection.
+
+#+begin_src chroma :tabindex 0
+(defun my/delete-file-and-buffer ()
+  "Kills the current buffer and deletes the file it is visiting."
+  (interactive)
+  (let ((filename (buffer-file-name)))
+    (if filename
+        (if (y-or-n-p (concat "Do you really want to delete file " filename " ?"))
+            (progn
+              (delete-file filename)
+              (message "Deleted file %s." filename)
+              (kill-buffer)))
+      (message "Not a file visiting buffer!"))))
+
+(global-set-key (kbd "C-x K") 'my/delete-file-and-buffer)
+#+end_src
+
+*** Edit File as Root
+:PROPERTIES:
+:CUSTOM_ID: edit-file-as-root
+:END:
+
+#+begin_src chroma :tabindex 0
+(defun my/sudo-find-file (file-name)
+  "Like find file, but opens the file as root."
+  (interactive "FSudo Find File: ")
+  (let ((tramp-file-name (concat "/sudo::" (expand-file-name file-name))))
+    (find-file tramp-file-name)))
+#+end_src
+
+*** Insert Snippets
+:PROPERTIES:
+:CUSTOM_ID: insert-snippets
+:END:
+Very often, I want to insert today's date. There are
+[[https://www.emacswiki.org/emacs/InsertingTodaysDate][many ways]] of
+doing this.
+
+#+begin_src chroma :tabindex 0
+(defun my/insert-current-date () (interactive)
+       (insert (shell-command-to-string "echo -n $(date +%Y-%m-%d)")))
+
+(defhydra my/hydra-snippets (:hint nil
+                             :foreign-keys warn
+                             :exit t)
+  "Snippets"
+  ("d" (my/insert-current-date) "Current Date (yyyy-mm-dd)")
+  ("q" nil "Quit Menu"))
+
+(global-set-key (kbd "C-c s") 'my/hydra-snippets/body)
+#+end_src
+
+*** Tramp
+:PROPERTIES:
+:CUSTOM_ID: tramp
+:END:
+I found Tramp could be spammy to the minibuffer when saving file.
+
+For example, these logs are printed to the minibuffer when saving a
+file.
+
+#+begin_quote
+Tramp: Encoding local file ‘/tmp/tramp.JniPQo.org' using
+‘base64-encode-region'...done Tramp: Decoding remote file
+‘/ssh:<user>@<host>:/path/to/test.org' using ‘base64 -d -
+
+#+end_quote
+
+Set =tramp-verbose= to =2= or lower to avoid showing the “connection to
+remote hosts” level message in minibuffer.
+
+#+begin_src chroma :tabindex 0
+;; for Emacs 28 or above
+(setq tramp-verbose 2)
+;; for Emacs 27 or below
+(setq tramp-message-show-message nil)
+#+end_src
+
+*** Case-sensitive =replace-string=
+:PROPERTIES:
+:CUSTOM_ID: case-sensitive-replace-string
+:END:
+=M-x replace-string= preserves case in each match if =case-replace=
+(preserve case) and =case-fold-search= (ignore case) are non-nil. The
+latter makes =replace-string= case-insensitive.
+
+I prefer case-sensitive =replace-string= and apply the customization
+from [[https://stackoverflow.com/a/5346216]].
+
+#+begin_src chroma :tabindex 0
+(defun with-case-fold-search (orig-fun &rest args)
+  (let ((case-fold-search nil))
+    (apply orig-fun args)))
+
+(advice-add 'replace-string :around #'with-case-fold-search)
+#+end_src
+
+** Appearance
+:PROPERTIES:
+:CUSTOM_ID: appearance
+:END:
+*** Modus Theme
+:PROPERTIES:
+:CUSTOM_ID: modus-theme
+:END:
+Note that there is a command =M-x modus-themes-toggle= to toggle the
+dark and light modus theme. Thanks to
+[[https://www.youtube.com/watch?v=JJPokfFxyFo][this video]]. I found the
+Modus themes is less buggy than doom theme, with the =which-key=
+package.
+
+#+begin_src chroma :tabindex 0
+(use-package modus-themes
+  :init
+  (setq modus-themes-to-toggle '(modus-operandi modus-vivendi-tinted))
+  (setq modus-themes-org-blocks 'gray-background)
+  (setq modus-themes-headings
+        '((agenda-date . (1.2))))
+
+  (setq modus-themes-common-palette-overrides
+        '((fg-heading-1 blue-cooler)
+          (fg-heading-2 blue)
+          (fg-heading-3 blue-warmer)))
+  (load-theme 'modus-vivendi-tinted :no-confirm)
+  :bind ("<f5>" . modus-themes-toggle))
+#+end_src
+
+*** Doom Modeline
+:PROPERTIES:
+:CUSTOM_ID: doom-modeline
+:END:
+I don't use Doom Emacs but I do use its modeline.
+
+#+begin_src chroma :tabindex 0
+;; https://github.com/seagle0128/doom-modeline
+(use-package doom-modeline
+  :init
+  (doom-modeline-mode +1))
+#+end_src
+
+** Window Management
+:PROPERTIES:
+:CUSTOM_ID: window-management
+:END:
+*** Winner Mode
+:PROPERTIES:
+:CUSTOM_ID: winner-mode
+:END:
+Winner Mode is a global minor mode. When activated, it allows you to
+“undo” (and “redo”) changes in the window configuration with the key
+commands =C-c left= and =C-c right=.
+
+#+begin_src chroma :tabindex 0
+(use-package winner
+  :init
+  (winner-mode +1))
+#+end_src
+
+*** Window Navigation
+:PROPERTIES:
+:CUSTOM_ID: window-navigation
+:END:
+
+#+begin_src chroma :tabindex 0
+(use-package windmove
+  :bind
+  ("M-s-<up>" . 'windmove-up)
+  ("M-s-<down>" . 'windmove-down)
+  ("M-s-<left>" . 'windmove-left)
+  ("M-s-<right>" . 'windmove-right))
+
+(use-package ace-window
+  :bind
+  ("M-o" . 'ace-window)
+  :custom
+  (aw-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
+  (aw-scope 'frame))
+#+end_src
+
+*** Window Dedication
+:PROPERTIES:
+:CUSTOM_ID: window-dedication
+:END:
+
+#+begin_src chroma :tabindex 0
+(defun my/toggle-current-window-dedication ()
+  (interactive)
+  (let* ((window (selected-window))
+         (dedicated (window-dedicated-p window)))
+    (set-window-dedicated-p window (not dedicated))
+    (message "Window %sdedicated to %s"
+             (if dedicated "no longer " "")
+             (buffer-name))))
+(global-set-key (kbd "<f11>") 'my/toggle-current-window-dedication)
+#+end_src
+
+*** Focus to new Window after Split
+:PROPERTIES:
+:CUSTOM_ID: focus-to-new-window-after-split
+:END:
+I found it is more nature to focus to the new window after splitting.
+
+#+begin_src chroma :tabindex 0
+(global-set-key (kbd "C-x 2")
+                (lambda ()
+                  (interactive)
+                  (split-window-vertically)
+                  (other-window 1)))
+(global-set-key (kbd "C-x 3")
+                (lambda ()
+                  (interactive)
+                  (split-window-horizontally)
+                  (other-window 1)))
+#+end_src
+
+*** Tab Bar Mode
+:PROPERTIES:
+:CUSTOM_ID: tab-bar-mode
+:END:
+I use the tab bar mode to keep important buffers visible. For example, I
+create a new tab for a frequently used buffer so that I can switch to it
+real quick.
+
+Note that it is common to use tab bar mode with
+[[https://www.gnu.org/software/emacs/manual/html_node/emacs/Saving-Emacs-Sessions.html][desktop
+mode]] to restore the window configuration. However, I am not using
+that.
+
+#+begin_src chroma :tabindex 0
+(use-package emacs
+  :config
+  (setq tab-bar-close-button-show nil)
+  (setq tab-bar-new-button-show nil)
+
+  ;; hide the tab bar when only one tab. Looks better especially when editting a file with emacsclient.
+  (setq tab-bar-show 1)
+  ;; Show the absolute number of the tab
+  (setq tab-bar-tab-hints t)
+  ;; Switch to tab by C-?
+  (setq tab-bar-select-tab-modifiers '(control))
+
+  (tab-bar-mode +1)
+  :bind
+  ("C-<tab>" . tab-next))
+#+end_src
+
+** Discoverability
+:PROPERTIES:
+:CUSTOM_ID: discoverability
+:END:
+*** Completion with =vertico=
+:PROPERTIES:
+:CUSTOM_ID: completion-with-vertico
+:END:
+
+#+begin_src chroma :tabindex 0
+(use-package vertico
+  :init
+  (vertico-mode)
+  (setq vertico-count 25)
+  :bind
+  (:map vertico-map
+        ([escape] . minibuffer-keyboard-quit)
+        ("<prior>" . vertico-scroll-down)
+        ("<next>" . vertico-scroll-up)))
+
+;; Persist history over Emacs restarts. Vertico sorts by history position.
+(use-package savehist
+  :init
+  (savehist-mode))
+
+;; A few more useful configurations...
+(use-package emacs
+  :init
+  ;; Add prompt indicator to `completing-read-multiple'.
+  ;; We display [CRM<separator>], e.g., [CRM,] if the separator is a comma.
+  (defun crm-indicator (args)
+    (cons (format "[CRM%s] %s"
+                  (replace-regexp-in-string
+                   "\\`\\[.*?]\\*\\|\\[.*?]\\*\\'" ""
+                   crm-separator)
+                  (car args))
+          (cdr args)))
+  (advice-add #'completing-read-multiple :filter-args #'crm-indicator)
+
+  ;; Do not allow the cursor in the minibuffer prompt
+  (setq minibuffer-prompt-properties
+        '(read-only t cursor-intangible t face minibuffer-prompt))
+  (add-hook 'minibuffer-setup-hook #'cursor-intangible-mode)
+
+  ;; Emacs 28: Hide commands in M-x which do not work in the current mode.
+  ;; Vertico commands are hidden in normal buffers.
+  (setq read-extended-command-predicate
+        #'command-completion-default-include-p)
+
+  ;; Enable recursive minibuffers
+  (setq enable-recursive-minibuffers t))
+
+;; Optionally use the `orderless' completion style.
+(use-package orderless
+  :init
+  ;; Configure a custom style dispatcher (see the Consult wiki)
+  ;; (setq orderless-style-dispatchers '(+orderless-dispatch)
+  ;;       orderless-component-separator #'orderless-escapable-split-on-space)
+  (setq completion-styles '(orderless basic)
+        completion-category-defaults nil
+        completion-category-overrides '((file (styles partial-completion)))))
+#+end_src
+
+*** Consult
+:PROPERTIES:
+:CUSTOM_ID: consult
+:END:
+
+#+begin_src chroma :tabindex 0
+(use-package consult
+  :bind
+  ("C-f" . consult-line)
+  ("C-s" . consult-line)
+  ("C-b" . consult-bookmark)
+  ("C-j" . consult-imenu)
+  :config
+  (with-eval-after-load "org"
+    (define-key org-mode-map (kbd "C-j") #'consult-org-heading)))
+#+end_src
+
+*** Embark & Marginalia
+:PROPERTIES:
+:CUSTOM_ID: embark-and-marginalia
+:END:
+
+#+begin_src chroma :tabindex 0
+(use-package marginalia
+  :init
+  (setq marginalia-align 'center)
+  (marginalia-mode))
+
+(use-package embark
+  :bind
+  (("C-." . embark-act)         ;; pick some comfortable binding
+   ("C-;" . embark-dwim)        ;; good alternative: M-.
+   ("C-h B" . embark-bindings)) ;; alternative for "describe-bindings"
+
+  :init
+  ;; Optionally replace the key help with a completing-read interface
+  (setq prefix-help-command #'embark-prefix-help-command)
+
+  :config
+  ;; Hide the mode line of the Embark live/completions buffers
+  (add-to-list 'display-buffer-alist
+               '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+                 nil
+                 (window-parameters (mode-line-format . none)))))
+
+;; Consult users will also want the embark-consult package.
+(use-package embark-consult
+  :hook
+  (embark-collect-mode . consult-preview-at-point-mode))
+#+end_src
+
+*** Hydra Consult Menu
+:PROPERTIES:
+:CUSTOM_ID: hydra-consult-menu
+:END:
+Create a hydra menu for the consult commands I use frequently.
+
+#+begin_src chroma :tabindex 0
+;; Hydra menu to for consult.
+(defhydra hydra-consult-menu (:hint nil
+                              :foreign-keys warn
+                              :exit t
+                              :pre (setq which-key-inhibit t)
+                              :post (setq which-key-inhibit nil))
+  "===== Consult Menu (F12) =====\n"
+  ("f" (my/consult-org-agenda) "Agenda")
+  ("r" (consult-recent-file) "Recentf")
+  ("q" nil "quit menu" :color blue))
+(global-set-key (kbd "<f8>") 'hydra-consult-menu/body)
+#+end_src
+
+*** which-key
+:PROPERTIES:
+:CUSTOM_ID: which-key
+:END:
+[[https://github.com/justbur/emacs-which-key][which-key]] displays the
+key bindings following your currently entered incomplete command (a
+prefix).
+
+#+begin_src chroma :tabindex 0
+(use-package which-key
+  :custom
+  ; (which-key-idle-delay 10000 "Set idle delay to infinite so it never trigger automatically")
+  ; (which-key-show-early-on-C-h t "Allow C-h to trigger which-key before it is done automatically.")
+  ; (which-key-idle-secondary-delay 0.05)
+  (which-key-mode +1 "Non-nil if which-Key mode is enabled"))
+#+end_src
+
+** Org-mode
+:PROPERTIES:
+:CUSTOM_ID: org-mode
+:END:
+*** Org Files
+:PROPERTIES:
+:CUSTOM_ID: org-files
+:END:
+
+#+begin_src chroma :tabindex 0
+;; Adding a "/" so that =find-file= finds the files under =~/org/=.
+(setq org-directory "~/org/")
+
+(defun my/expand-org-file-name (filename)
+  (expand-file-name filename org-directory))
+
+(setq my/org-inbox-file (my/expand-org-file-name "inbox.org")
+      my/org-task-file (my/expand-org-file-name "task.org")
+      my/org-note-file (my/expand-org-file-name "note.org")
+      my/org-review-file (my/expand-org-file-name "review.org")
+      my/org-vocab-file (my/expand-org-file-name "drill/vocab.org")
+      my/org-calendar-directory (my/expand-org-file-name ".calendar")
+      my/org-attachment-directory (my/expand-org-file-name ".attachment"))
+#+end_src
+
+*** Org Basic
+:PROPERTIES:
+:CUSTOM_ID: org-basic
+:END:
+
+#+begin_src chroma :tabindex 0
+(use-package emacs
+  :bind
+  (:map org-mode-map ("C-x n n" . org-toggle-narrow-to-subtree))
+  :config
+
+  ;; Enable the =org-indent-mode= by default.
+  (setq org-startup-indented t)
+
+  :hook
+  ;; Reserve "C-c <arrow>" for windmove
+  (org-mode . (lambda ()
+                (local-unset-key (kbd "C-c <left>"))
+                (local-unset-key (kbd "C-c <right>"))
+                (local-unset-key (kbd "C-c <up>"))
+                (local-unset-key (kbd "C-c <down>")))))
+#+end_src
+
+*** Capturing
+:PROPERTIES:
+:CUSTOM_ID: capturing
+:END:
+
+#+begin_src chroma :tabindex 0
+(global-set-key (kbd "C-c c") 'org-capture)
+
+;; The default file for capturing.
+(setq org-default-notes-file my/org-inbox-file)
+
+;; Org Capture Templates
+;;
+;; See https://orgmode.org/manual/Template-elements.html#index-org_002ddefault_002dnotes_002dfile-1
+(setq org-capture-templates nil)
+(add-to-list
+ 'org-capture-templates
+ '("i" "Inbox" entry (file org-default-notes-file)
+   "* %?\n%i\n%a"))
+
+(add-to-list
+ 'org-capture-templates
+ '("p" "Project" entry (file+headline my/org-task-file "Projects")
+   (file "~/org/.template/project.org")))
+
+(add-to-list
+ 'org-capture-templates
+ '("d" "Review: Daily Review" entry (file+olp+datetree my/org-review-file)
+   (file "~/org/.template/review-daily.org")
+   :tree-type week :clock-in t :clock-keep t :immediate-finish t :jump-to-captured t))
+
+(add-to-list
+ 'org-capture-templates
+ '("w" "Review: Weekly Review" entry (file+datetree my/org-review-file)
+   (file "~/org/.template/review-weekly.org")
+   :clock-in t :clock-keep t :immediate-finish t :jump-to-captured t))
+
+(add-to-list
+ 'org-capture-templates
+ '("v" "Vocab" entry (file+headline my/org-vocab-file "Translation")
+   "* %? :drill:\n\n** Translation\n\n** Definition\n"))
+
+(use-package org-cliplink)
+#+end_src
+
+*** Attachment
+:PROPERTIES:
+:CUSTOM_ID: attachment
+:END:
+I was using [[https://github.com/abo-abo/org-download][=org-download=]]
+but switched to the built-in
+[[https://orgmode.org/manual/Attachments.html][=org-attach=]] in 2022. I
+use =.dir-locals.el= to customize =org-attach-id-dir= if necessary.
+
+#+begin_src chroma :tabindex 0
+(require 'org-attach)
+(setq org-attach-id-dir my/org-attachment-directory)
+(setq org-attach-use-inheritance t)
+
+;; Use timestamp as ID and attachment folder. See https://helpdeskheadesk.net/2022-03-13/
+;; (setq org-id-method 'ts)
+;; (setq org-attach-id-to-path-function-list
+;;       '(org-attach-id-ts-folder-format
+;;         org-attach-id-uuid-folder-format))
+;; Shorten the Org timestamp ID
+;; (setq org-id-ts-format "%Y%m%dT%H%M%S")
+#+end_src
+
+*** Task Management
+:PROPERTIES:
+:CUSTOM_ID: task-management
+:END:
+See [[/posts/org-mode-task-management/][this blog post]] for my Org-Mode
+workflow for task management.
+
+#+begin_src chroma :tabindex 0
+;; Sets default-directory to org-directory so that =M-x magit= from the agenda view does not ask me for a dir.
+(global-set-key (kbd "C-c a")
+                (lambda ()
+                  (interactive)
+                  (let ((default-directory org-directory)) (org-agenda))))
+
+;; My agenda files.
+(setq org-agenda-files (list my/org-inbox-file my/org-task-file my/org-calendar-directory))
+
+;; Trying to use the current window as agenda frame.
+(setq org-agenda-window-setup 'current-window)
+
+;; Use sticky agenda since I need different agenda views (personal and work) at the same time.
+(setq org-agenda-sticky t)
+
+;; Just today
+(setq org-agenda-span 'day)
+
+;; Hide all scheduled todo.
+(setq org-agenda-todo-ignore-scheduled 'all)
+
+;; Ignores "far" deadline TODO items from TODO list.
+(setq org-agenda-todo-ignore-deadlines 'far)
+
+;; Hide all scheduled todo, from tags search view, like tags-todo.
+(setq org-agenda-tags-todo-honor-ignore-options t)
+
+;; Hide all done todo in agenda
+(setq org-agenda-skip-scheduled-if-done t)
+
+;; Hide task until the scheduled date.
+(setq org-agenda-skip-deadline-prewarning-if-scheduled 'pre-scheduled)
+
+
+;; Use an indirect buffer after <Tab> (org-agenda-goto) or <Enter> (org-agenda-switch-to).
+;;
+;; Also see https://emacs.stackexchange.com/a/17822
+;; (advice-add 'org-agenda-goto :after
+;;             (lambda (&rest args)
+;;               (org-tree-to-indirect-buffer)))
+;; (advice-add 'org-agenda-switch-to :after
+;;             (lambda (&rest args)
+;;               (org-tree-to-indirect-buffer)))
+
+;; Narrow to subtree after <Tab> (org-agenda-goto) or <Enter> (org-agenda-switch-to).
+;; (advice-add 'org-agenda-goto :after
+;;             (lambda (&rest args)
+;;               (org-narrow-to-subtree)))
+;; (advice-add 'org-agenda-switch-to :after
+;;             (lambda (&rest args)
+;;               (org-narrow-to-subtree)))
+
+(defun my/consult-org-agenda ()
+  (interactive)
+  (consult-org-agenda)
+  (org-tree-to-indirect-buffer))
+
+(global-set-key (kbd "<f1>")
+                (lambda ()
+                  (interactive)
+                  (consult-org-heading nil (list my/org-task-file))))
+
+(global-set-key (kbd "<f2>")
+                (lambda ()
+                  (interactive)
+                  (consult-org-heading nil (list my/org-note-file))))
+
+(defun my/consult-ripgrep-org-directory ()
+  (interactive)
+  ;; Add "--no-ignore-vcs" to the rg command so todo.org could be searched.
+  (let ((consult-ripgrep-args
+         "rg --null --line-buffered --color=never --max-columns=1000 --path-separator /   --smart-case --no-heading --line-number --no-ignore-vcs ."))
+    (consult-ripgrep org-directory "")))
+(global-set-key (kbd "C-S-f") 'my/consult-ripgrep-org-directory)
+
+;; Include the file name into the path in refile target.
+(setq org-refile-use-outline-path 'file)
+(setq org-outline-path-complete-in-steps nil)
+(setq org-refile-targets
+      '((nil :maxlevel . 2)
+        (my/org-task-file :maxlevel . 3)))
+
+(setq org-enforce-todo-dependencies t)
+(setq org-log-into-drawer t)
+
+;; 4 priorities: A, B, C, D (default)
+(setq org-priority-default 68
+      org-priority-lowest 68)
+
+;; Interstitial Journaling: add note to CLOCK entry after clocking out
+;; https://emacs.stackexchange.com/questions/37526/add-note-to-clock-entry-after-clocking-out
+(setq org-log-note-clock-out t)
+#+end_src
+
+*** Org Breadcrumb
+:PROPERTIES:
+:CUSTOM_ID: org-breadcrumb
+:END:
+
+#+begin_src chroma :tabindex 0
+(defun ndk/heading-title ()
+  "Get the heading title."
+  (save-excursion
+    (if (not (org-at-heading-p))
+        (org-previous-visible-heading 1))
+    (org-element-property :title (org-element-at-point))))
+
+(defun ndk/org-breadcrumbs ()
+  "Get the chain of headings from the top level down
+    to the current heading."
+  (let ((breadcrumbs (org-format-outline-path
+                      (org-get-outline-path)
+                      (1- (frame-width))
+                      nil " > "))
+        (title (ndk/heading-title)))
+    (if (string-empty-p breadcrumbs)
+        title
+      (format "%s" breadcrumbs))))
+
+(defun ndk/set-header-line-format()
+  (setq header-line-format '(:eval (ndk/org-breadcrumbs))))
+
+(add-hook 'org-mode-hook #'ndk/set-header-line-format)
+#+end_src
+
+*** Literate Programming with Org-Babel
+:PROPERTIES:
+:CUSTOM_ID: literate-programming-with-org-babel
+:END:
+[[https://orgmode.org/worg/org-contrib/babel/languages/index.html]]
+
+#+begin_src chroma :tabindex 0
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((emacs-lisp . t) (shell . t)))
+#+end_src
+
+*** Respect Content When Inserting Heading
+:PROPERTIES:
+:CUSTOM_ID: respect-content-when-inserting-heading
+:END:
+
+#+begin_src chroma :tabindex 0
+(setq org-insert-heading-respect-content t)
+#+end_src
+
+Also see [[https://www.n16f.net/blog/org-mode-headline-tips/]].
+
+*** Clocking
+:PROPERTIES:
+:CUSTOM_ID: clocking
+:END:
+
+#+begin_src chroma :tabindex 0
+(setq org-clock-mode-line-total 'current)
+(setq org-show-notification-timeout 3600)
+
+(org-clock-auto-clockout-insinuate)
+
+;; Create an indirect buffer for the current clocking task, and focus into it.
+(defun my/org-clock-goto ()
+  (interactive)
+  (org-clock-goto)
+  (org-tree-to-indirect-buffer)
+  (other-window 1)
+  (delete-other-windows))
+(global-set-key (kbd "C-c C-x j") 'my/org-clock-goto)
+#+end_src
+
+*** Images
+:PROPERTIES:
+:CUSTOM_ID: images
+:END:
+
+#+begin_src chroma :tabindex 0
+(setq org-startup-with-inline-images t)
+
+;; allows overriding the image width
+(setq org-image-actual-width nil)
+#+end_src
+
+** Personal Knowledge Management
+:PROPERTIES:
+:CUSTOM_ID: personal-knowledge-management
+:END:
+*** Note Taking with =denote=
+:PROPERTIES:
+:CUSTOM_ID: note-taking-with-denote
+:END:
+
+#+begin_src chroma :tabindex 0
+(defun my/denote-random-note (&optional directory)
+  "Open a random denote."
+  (interactive)
+  (let* ((denote-directory (or directory denote-directory))
+         (files (denote-directory-files)))
+    (find-file (nth (random (length files)) files))))
+
+(defun my/project-org-file-file ()
+  (interactive)
+  (let ((default-directory org-directory)) (project-find-file)))
+
+(use-package denote
+  :bind
+  ("C-c n n" . 'denote)
+  ;; ("C-c n f" . 'denote-open-or-create)
+  ("C-c n f" . 'my/project-org-file-file)
+  ("C-c n k" . 'denote-keywords-add)    ;; update file name automatically
+  ("C-c n K" . 'denote-keywords-remove) ;; update file name automatically
+  ("C-c n u" . 'denote-rename-file-using-front-matter)
+  ("C-c n l" . 'denote-link-find-backlink)
+  ("C-c n r" . 'my/denote-random-note)
+  :init
+  (setq denote-directory (expand-file-name org-directory))
+  :config
+  (setq denote-known-keywords '("emacs"))
+  (setq denote-prompts '(subdirectory title))
+  (setq denote-excluded-directories-regexp ".attachment")
+
+  ;; Makes the denote links different from usual link.
+  (set-face-attribute 'denote-faces-link
+                      nil :foreground "magenta" :inherit 'link)
+
+  ;; Remove the date and the identifier. They are duplicated with the file name.
+  ;; I want to remove filetags too but denote-keyword-* need that.
+  (setq denote-org-front-matter "#+title: %1$s\n#+filetags: %3$s\n")
+
+  (add-hook 'dired-mode-hook #'denote-dired-mode))
+
+;; allow empty keyword
+(defun denote-rename-file-using-front-matter (file &optional auto-confirm)
+  (interactive (list (buffer-file-name) current-prefix-arg))
+  (when (buffer-modified-p)
+    (if (or auto-confirm
+            (y-or-n-p "Would you like to save the buffer?"))
+        (save-buffer)
+      (user-error "Save buffer before proceeding")))
+  (unless (denote-file-is-writable-and-supported-p file)
+    (user-error "The file is not writable or does not have a supported file extension"))
+  (if-let* ((file-type (denote-filetype-heuristics file))
+            (title (denote-retrieve-title-value file file-type))
+            (extension (file-name-extension file t))
+            (id (denote-retrieve-or-create-file-identifier file))
+            (dir (file-name-directory file))
+            (new-name (denote-format-file-name
+                       dir id (denote-retrieve-keywords-value file file-type) (denote-sluggify title) extension)))
+      (when (or auto-confirm
+                (denote-rename-file-prompt file new-name))
+        (denote-rename-file-and-buffer file new-name)
+        (denote-update-dired-buffers))
+    (user-error "No front matter for title and/or keywords")))
+
+;; (use-package consult-denote
+;;   :straight (consult-denote :type git :host codeberg :repo "whhone/consult-denote")
+;;   :after denote
+;;   :bind
+;;   ("C-c n i" . 'consult-denote-link-insert-link)
+;;   ("C-c n f" . 'consult-denote-open-or-create)
+;;   ("C-c n F" . 'consult-denote-ripgrep))
+#+end_src
+
+*** Blogging with ox-hugo
+:PROPERTIES:
+:CUSTOM_ID: blogging-with-ox-hugo
+:END:
+[[https://whhone.com][My blog]] is generated by Hugo and ox-hugo.
+
+#+begin_src chroma :tabindex 0
+(use-package ox-hugo
+  :after ox)
+#+end_src
+
+*** Exporting Notes
+:PROPERTIES:
+:CUSTOM_ID: exporting-notes
+:END:
+
+#+begin_src chroma :tabindex 0
+;; Do not export with TOC, e.g., with org-md-export-as-markdown, org-ascii-export-as-ascii
+(setq org-export-with-toc nil)
+
+;; (setq org-export-with-section-numbers nil)
+#+end_src
+
+*** Spaced Repetition with org-drill
+:PROPERTIES:
+:CUSTOM_ID: spaced-repetition-with-org-drill
+:END:
+I use [[https://orgmode.org/worg/org-contrib/org-drill.html][org-drill]]
+to enhance my learning, like vocabulary, reading notes, concepts, etc.
+
+#+begin_src chroma :tabindex 0
+;; https://orgmode.org/worg/org-contrib/org-drill.html
+(use-package org-drill
+  :custom
+  (org-drill-save-buffers-after-drill-sessions-p nil "Save buffers after drill sessions without prompt.")
+  (org-drill-maximum-items-per-session 10 "Reduce from the default 30 to make it to become a habit.")
+  :bind
+  ("C-c d" . org-drill))
+#+end_src
+
+I used Anki before embracing Emacs and Org Mode. Anki gave me access on
+mobile but I have to sync my data to its server. I migrated to org-drill
+for a more coherent Emacs workflow. To be fair, it gives me access over
+ssh :-p.
+
+** Reading
+:PROPERTIES:
+:CUSTOM_ID: reading
+:END:
+*** Dictionary
+:PROPERTIES:
+:CUSTOM_ID: dictionary
+:END:
+
+#+begin_src chroma :tabindex 0
+;; https://github.com/xuchunyang/youdao-dictionary.el
+(use-package youdao-dictionary
+  :config
+  (setq url-automatic-caching t) ; enable cache
+  :bind
+  ("C-c v" . youdao-dictionary-search-at-point+)
+  ("C-c V" . youdao-dictionary-play-voice-at-point))
+
+(defun my/browse-dictionary-at-point ()
+  (interactive)
+  (browse-url (concat "https://dictionary.cambridge.org/zht/詞典/英語-漢語-繁體/" (thing-at-point 'word))))
+#+end_src
+
+*** Google Translate
+:PROPERTIES:
+:CUSTOM_ID: google-translate
+:END:
+
+#+begin_src chroma :tabindex 0
+(use-package google-translate
+  :config
+  (setq google-translate-output-destination 'popup)
+  (setq google-translate-default-source-language "en")
+  (setq google-translate-default-target-language "zh-TW")
+  :bind
+  ("C-c b" . google-translate-at-point))
+#+end_src
+
+*** PDF
+:PROPERTIES:
+:CUSTOM_ID: pdf
+:END:
+
+#+begin_src chroma :tabindex 0
+(use-package pdf-tools
+  :config
+  (pdf-tools-install))
+
+(use-package pdf-view-restore
+  :after pdf-tools
+  :config
+  (add-hook 'pdf-view-mode-hook 'pdf-view-restore-mode))
+#+end_src
+
+** Writing
+:PROPERTIES:
+:CUSTOM_ID: writing
+:END:
+*** Synonyms
+:PROPERTIES:
+:CUSTOM_ID: synonyms
+:END:
+
+#+begin_src chroma :tabindex 0
+;; https://www.powerthesaurus.org/
+(use-package powerthesaurus
+  :bind
+  ("M-`" . powerthesaurus-lookup-word-dwim))
+#+end_src
+
+*** Write Good
+:PROPERTIES:
+:CUSTOM_ID: write-good
+:END:
+The first challenge from
+[[https://www.goodreads.com/en/book/show/40063024][Dreyer's English]] is
+to write without weasel words.
+
+#+begin_src chroma :tabindex 0
+(use-package writegood-mode
+  :config
+  (setq writegood-weasel-words
+        '("very" "rather" "really" "quite" "in fact" "just" "so" "pretty" "of course" "surely" "that said" "actually")))
+#+end_src
+
+** Programming
+:PROPERTIES:
+:CUSTOM_ID: programming
+:END:
+*** Magit
+:PROPERTIES:
+:CUSTOM_ID: magit
+:END:
+There are multiple key-binding to trigger =magit-status=:
+
+- =C-x g= :: The default keybinding from magit.
+- =C-x p m= :: The keybinding from project.el.
+
+#+begin_src chroma :tabindex 0
+(use-package magit)
+#+end_src
+
+*** Diff Highlight
+:PROPERTIES:
+:CUSTOM_ID: diff-highlight
+:END:
+
+#+begin_src chroma :tabindex 0
+(use-package diff-hl
+  :init
+  (global-diff-hl-mode)
+  :hook
+  (magit-pre-refresh . diff-hl-magit-pre-refresh)
+  (magit-post-refresh . diff-hl-magit-post-refresh))
+#+end_src
+
+*** Terminal
+:PROPERTIES:
+:CUSTOM_ID: terminal
+:END:
+
+#+begin_src chroma :tabindex 0
+(use-package vterm
+  :config
+  (define-key vterm-mode-map (kbd "<f1>") nil)
+  (define-key vterm-mode-map (kbd "<f2>") nil)
+  (define-key vterm-mode-map (kbd "<f3>") nil)
+  (define-key vterm-mode-map (kbd "<f4>") nil)
+  (define-key vterm-mode-map (kbd "<f5>") nil)
+  (define-key vterm-mode-map (kbd "<f6>") nil)
+  (define-key vterm-mode-map (kbd "<f7>") nil)
+  (define-key vterm-mode-map (kbd "<f8>") nil)
+  (define-key vterm-mode-map (kbd "<f9>") nil)
+  (define-key vterm-mode-map (kbd "<f10>") nil)
+  (define-key vterm-mode-map (kbd "<f11>") nil)
+  (define-key vterm-mode-map (kbd "<f12>") nil)
+  :custom
+  (vterm-shell "bash" "Set to bash instead of the default $SHELL so that vterm from TRAMP uses bash.")
+  (vterm-tramp-shells '(("docker" "/bin/sh") ("ssh" "/bin/bash")))
+  :hook
+  (vterm-mode . goto-address-mode))
+
+(use-package vterm-toggle
+  :config
+  ;; show vterm buffer in side window
+  (add-to-list 'display-buffer-alist
+               '("\\*vterm\\*"
+                 (display-buffer-reuse-window display-buffer-in-side-window)
+                 (side . bottom)
+                 (dedicated . t)
+                 (reusable-frames . visible) ;; depends on how I use Emacs / Emacs Client
+                 (window-height . 0.5)))
+  :bind
+  ("s-<return>" . vterm-toggle)
+  ("C-`" . vterm-toggle)
+  ("C-c t" . vterm-toggle))
+#+end_src
+
+*** Snippet Template with =yasnippet=
+:PROPERTIES:
+:CUSTOM_ID: snippet-template-with-yasnippet
+:END:
+
+#+begin_src chroma :tabindex 0
+(use-package yasnippet
+  :config
+  (yas-global-mode)
+  :bind
+  ("C-c y i" . yas-insert-snippet)
+  ("C-c y n" . yas-new-snippet))
+
+(use-package yasnippet-snippets)
+#+end_src
+
+*** Make Script Files Executable Automatically
+:PROPERTIES:
+:CUSTOM_ID: make-script-files-executable-automatically
+:END:
+Make script files (with shebang like =#!/bin/bash=, =#!/bin/sh=)
+executable automatically. See
+[[https://emacsredux.com/blog/2021/09/29/make-script-files-executable-automatically/][this
+blog post]] from Emacs Redux.
+
+#+begin_src chroma :tabindex 0
+(add-hook 'after-save-hook
+          'executable-make-buffer-file-executable-if-script-p)
+#+end_src
+
+*** YAML Mode
+:PROPERTIES:
+:CUSTOM_ID: yaml-mode
+:END:
+
+#+begin_src chroma :tabindex 0
+(use-package yaml-mode)
+#+end_src
+
+*** Web Mode
+:PROPERTIES:
+:CUSTOM_ID: web-mode
+:END:
+[[https://web-mode.org/]] is an autonomous major-mode for editing *web
+templates*.
+
+#+begin_src chroma :tabindex 0
+(use-package web-mode
+  :init
+  (add-to-list 'auto-mode-alist '("\\.html\\'" . web-mode))
+
+  ;; TODO: Use .dir.local because not all .html are go template
+  (setq web-mode-engines-alist
+    '(("go" . "\\.html\\'"))))
+#+end_src
+
+*** Markdown Mode
+:PROPERTIES:
+:CUSTOM_ID: markdown-mode
+:END:
+
+#+begin_src chroma :tabindex 0
+(use-package markdown-mode
+  :bind
+  (:map markdown-mode-map ("M-<left>" . markdown-promote))
+  (:map markdown-mode-map ("M-<right>" . markdown-demote))
+  (:map markdown-mode-map ("M-S-<left>" . markdown-promote-subtree))
+  (:map markdown-mode-map ("M-S-<right>" . markdown-demote-subtree)))
+#+end_src
+
+*** Company Mode
+:PROPERTIES:
+:CUSTOM_ID: company-mode
+:END:
+
+#+begin_src chroma :tabindex 0
+(use-package company)
+#+end_src
+
+*** LSP Mode
+:PROPERTIES:
+:CUSTOM_ID: lsp-mode
+:END:
+Documentation: [[https://emacs-lsp.github.io/lsp-mode/]]
+
+#+begin_src chroma :tabindex 0
+(use-package lsp-mode
+  :init
+  (setq lsp-keymap-prefix "M-l")
+  :hook
+  (lsp-mode . lsp-enable-which-key-integration)
+  :commands lsp)
+
+(use-package lsp-ui
+  :commands lsp-ui-mode
+  :bind
+  (:map lsp-ui-mode-map
+        ([remap xref-find-references] . lsp-ui-peek-find-references)
+        ([remap xref-find-definitions] . lsp-ui-peek-find-definitions)
+        ("M-l i" . lsp-ui-imenu))
+  :config
+  (setq lsp-ui-peek-show-directory nil)
+
+  (setq lsp-ui-doc-enable t)
+  (setq lsp-ui-doc-header t)
+  (setq lsp-ui-doc-include-signature t)
+  (setq lsp-ui-doc-border (face-foreground 'default))
+
+  (setq lsp-ui-sideline-enable t)
+  (setq lsp-ui-sideline-show-code-actions t)
+  (setq lsp-ui-sideline-show-diagnostics nil)
+  (setq lsp-ui-sideline-show-hover nil)
+  (setq lsp-ui-sideline-delay 0.1))
+
+(use-package lsp-treemacs)
+#+end_src
+
+**** C++ Setup
+:PROPERTIES:
+:CUSTOM_ID: c-plus-plus-setup
+:END:
+[[https://emacs-lsp.github.io/lsp-mode/page/lsp-clangd/]]
+
+#+begin_src chroma :tabindex 0
+(use-package lsp-mode
+  :hook (c++-mode . lsp))
+#+end_src
+
+**** Python Setup
+:PROPERTIES:
+:CUSTOM_ID: python-setup
+:END:
+[[https://emacs-lsp.github.io/lsp-python-ms/]]
+
+#+begin_src chroma :tabindex 0
+(use-package lsp-python-ms
+  :init (setq lsp-python-ms-auto-install-server t)
+  :hook (python-mode . (lambda ()
+                         (require 'lsp-python-ms)
+                         (lsp))))  ; or lsp-deferred
+
+;; Use (pyvenv-*) to manage the Python virtual environment
+(use-package pyvenv)
+#+end_src
+
+*** Caddyfile Mode
+:PROPERTIES:
+:CUSTOM_ID: caddyfile-mode
+:END:
+
+#+begin_src chroma :tabindex 0
+(use-package caddyfile-mode
+  :ensure t
+  :mode (("Caddyfile\\'" . caddyfile-mode)))
+#+end_src
+
+** Competitive Programming
+:PROPERTIES:
+:CUSTOM_ID: competitive-programming
+:END:
+*** Auto Insert the C++ Template
+:PROPERTIES:
+:CUSTOM_ID: auto-insert-the-c-plus-plus-template
+:END:
+
+#+begin_src chroma :tabindex 0
+;; *NOTE* Trailing slash important
+(setq auto-insert-directory "~/.emacs.d/auto-insert/")
+
+(define-auto-insert "\.cpp" "template.cpp")
+(auto-insert-mode)
+#+end_src
+
+*** Compile and Run
+:PROPERTIES:
+:CUSTOM_ID: compile-and-run
+:END:
+See [[https://codeforces.com/blog/entry/101292]].
+
+#+begin_src chroma :tabindex 0
+(defun my/compileandrun()
+  (interactive)
+  (if (eq major-mode 'c++-mode)
+    (let* ((src (file-name-nondirectory (buffer-file-name)))
+           (exe (file-name-sans-extension src)))
+      (compile (concat "g++ -std=c++17 -O2 -Wall -Wno-sign-compare " src " -o /tmp/" exe " && time /tmp/" exe " < /tmp/input.txt" )))
+    (recompile)))
+
+(global-set-key (kbd "<f12>") 'my/compileandrun)
+#+end_src
+
+** Project Management
+:PROPERTIES:
+:CUSTOM_ID: project-management
+:END:
+*** Project
+:PROPERTIES:
+:CUSTOM_ID: project
+:END:
+I particularly love the handy =projectile= function
+=projectile-find-file-in-known-project= and adding that function to
+=project.el= below.
+
+Note: Run =project-forget-zombie-projects= to remove deleted project
+directories.
+
+=project-prefix-map= is bind to =C-x p= by default. (it seems no way to
+change it)
+
+#+begin_src chroma :tabindex 0
+(setq project-switch-use-entire-map t)
+#+end_src
+
+**** Full Text Search (=F=) in Current Project Files
+:PROPERTIES:
+:CUSTOM_ID: full-text-search--f--in-current-project-files
+:END:
+
+#+begin_src chroma :tabindex 0
+(defun my/consult-ripgrep-current-project ()
+  "Full text search with ripgrep in current project"
+  (interactive)
+  (consult-ripgrep (if (project-current) (project-root (project-current))
+                     default-directory) ""))
+(define-key project-prefix-map (kbd "F") #'my/consult-ripgrep-current-project)
+#+end_src
+
+**** Find File (=a=) in All Known Project
+:PROPERTIES:
+:CUSTOM_ID: find-file--a--in-all-known-project
+:END:
+
+#+begin_src chroma :tabindex 0
+(defun my/project-all-project-files ()
+  "Get a list of all files in all known projects."
+  (cl-mapcan
+   (lambda (project)
+     (when (file-exists-p project)
+       (mapcar (lambda (file)
+                 (expand-file-name file project))
+               (project-files (project-current nil project)))))
+   (project-known-project-roots)))
+
+(defun my/project-find-file-in-known-projects ()
+  "Find a file from all known projects."
+  (interactive)
+  (let* ((completion-ignore-case read-file-name-completion-ignore-case)
+         ;; Note that "project--read-file-cpd-relative" is broken for
+         ;; this function since Emacs 29. Instead of using
+         ;; "project-read-file-name-function", always use
+         ;; "project--read-file-absolute".
+         (file (project--read-file-absolute
+                "Find file in known projects" (my/project-all-project-files) nil nil
+                (thing-at-point 'filename))))
+    (if (string= file "")
+        (user-error "You didn't specify the file")
+      (find-file file))))
+
+(define-key project-prefix-map (kbd "a") #'my/project-find-file-in-known-projects)
+#+end_src
+
+*** Treemacs
+:PROPERTIES:
+:CUSTOM_ID: treemacs
+:END:
+First of all, press =?= to summon the helpful hydra.
+
+The =treemacs-follow-mode= is a little annoying to me. I turn it off and
+always use =treemacs-find-file= for focusing.
+
+#+begin_src chroma :tabindex 0
+(defun my/treemacs-find-file ()
+  (interactive)
+  (treemacs-find-file)
+  (treemacs-select-window))
+
+;; Optimize Treemacs for note-taking with Org-Roam.
+;; (with-eval-after-load 'treemacs
+;;   (defun my/trim-roam-prefix (name)
+;;     (if (string-prefix-p "20" name)
+;;         (substring name 9) name))
+
+;;   (defun my/treemacs-file-name-transformer (name)
+;;     (let ((trimmed (my/trim-roam-prefix name)))
+;;       (if (string-suffix-p ".org" trimmed)
+;;           (substring trimmed 0 -4) trimmed)))
+
+;;   (setq treemacs-file-name-transformer #'my/treemacs-file-name-transformer)
+
+;;   (defun treemacs-ignore-org-hidden-files (filename absolute-path)
+;;     (and (string-match-p (regexp-quote "/org") absolute-path)
+;;          (string-prefix-p "." filename)))
+;;   (add-to-list 'treemacs-ignored-file-predicates #'treemacs-ignore-org-hidden-files)
+
+;;   (defun treemacs-ignore-org-archive (filename absolute-path)
+;;     (and (string-match-p (regexp-quote "/org") absolute-path)
+;;          (string-suffix-p ".org_archive" filename)))
+;;   (add-to-list 'treemacs-ignored-file-predicates #'treemacs-ignore-org-archive))
+
+(use-package treemacs
+  :config
+  (treemacs-follow-mode -1)
+  :custom
+  (treemacs-width 40)
+  (treemacs-width-is-initially-locked nil)
+  (treemacs-sorting 'mod-time-desc "Optimize for note taking with mod-time-desc.")
+  :bind
+  ("<f9>"   . treemacs)
+  ("C-<f9>" . my/treemacs-find-file)
+  ("M-0" . treemacs-select-window))
+#+end_src
+
+** Chinese Support
+:PROPERTIES:
+:CUSTOM_ID: chinese-support
+:END:
+*** Rime Input Method
+:PROPERTIES:
+:CUSTOM_ID: rime-input-method
+:END:
+See [[https://github.com/DogLooksGood/emacs-rime]] for the setup
+instruction.
+
+Use =C-\ (toggle-input-method)= to toggle the input method. Run
+=M-x rime-open-configuration= to open the =default.custom.yaml= under
+=rime-user-data-dir=.
+
+#+begin_src chroma :tabindex 0
+(use-package rime
+  :init
+  (setq default-input-method "rime")
+  :custom
+  (rime-show-candidate 'posframe)
+  (rime-posframe-style 'vertical))
+#+end_src
+
+*** CJK Word Wrap
+:PROPERTIES:
+:CUSTOM_ID: cjk-word-wrap
+:END:
+Emacs 28 adds better word wrap / line break support for CJK. See
+[[https://emacstalk.github.io/post/009/][Emacs 28 新特性介绍]].
+
+#+begin_src chroma :tabindex 0
+(setq word-wrap-by-category t)
+#+end_src
+
+*** Better CJK Font
+:PROPERTIES:
+:CUSTOM_ID: better-cjk-font
+:END:
+[[https://github.com/tumashu/cnfonts][cnfonts]] is a tool for
+configuring the fonts used in Emacs.
+
+#+begin_src chroma :tabindex 0
+(use-package cnfonts
+  :init
+  (setq cnfonts-profiles '("hack"))
+  (setq cnfonts-default-fontsize 10)
+  :config
+  (cnfonts-mode 1))
+#+end_src
+
+** File Management
+:PROPERTIES:
+:CUSTOM_ID: file-management
+:END:
+*** Dirvish
+:PROPERTIES:
+:CUSTOM_ID: dirvish
+:END:
+
+#+begin_src chroma :tabindex 0
+(use-package dirvish
+  :init
+  (dirvish-override-dired-mode)
+  :custom
+  (dirvish-quick-access-entries ; It's a custom option, `setq' won't work
+   '(("o" "~/org"                  "Org")
+     ("b" "~/sync/blog"            "Blog")))
+  :config
+  (setq dirvish-attributes '(vc-state subtree-state all-the-icons collapse git-msg file-time file-size))
+  :bind (
+  :map dirvish-mode-map ; Dirvish inherits `dired-mode-map'
+  ("a"   . dirvish-quick-access)
+  ("f"   . dirvish-file-info-menu)
+  ("y"   . dirvish-yank-menu)
+  ("N"   . dirvish-narrow)
+  ("^"   . dirvish-history-last)
+  ("h"   . dirvish-history-jump) ; remapped `describe-mode'
+  ("s"   . dirvish-quicksort)    ; remapped `dired-sort-toggle-or-edit'
+  ("v"   . dirvish-vc-menu)      ; remapped `dired-view-file'
+  ("TAB" . dirvish-subtree-toggle)
+  ("M-f" . dirvish-history-go-forward)
+  ("M-b" . dirvish-history-go-backward)
+  ("M-l" . dirvish-ls-switches-menu)
+  ("M-m" . dirvish-mark-menu)
+  ("M-t" . dirvish-layout-toggle)
+  ("M-s" . dirvish-setup-menu)
+  ("M-e" . dirvish-emerge-menu)
+  ("M-j" . dirvish-fd-jump)))
+#+end_src
+
+** GnuPG Passphrase Via Minibuffer
+:PROPERTIES:
+:CUSTOM_ID: gnupg-passphrase-via-minibuffer
+:END:
+GnuPG could be used when signing git commit with GPG in Magit over the
+SSH.
+
+See [[https://elpa.gnu.org/packages/pinentry.html]] for the setup steps.
+It requires adding =allow-emacs-pinentry= to the
+=~/.gnupg/gpg-agent.conf=.
+
+#+begin_src chroma :tabindex 0
+(use-package pinentry
+  :init
+  (pinentry-start))
+#+end_src
+
+** Emacs 29
+:PROPERTIES:
+:CUSTOM_ID: emacs-29
+:END:
+
+#+begin_src chroma :tabindex 0
+(if (fboundp 'pixel-scroll-precision-mode)
+  (pixel-scroll-precision-mode 1))
+#+end_src
+
+<<disqus-container>>
+Load Disqus Comments
+
+<<disqus-comments>>
+
+<<disqus_thread>>
+Enable JavaScript to view Disqus comments.
+
+--------------
+
+© 2019-2023 Wai Hon Law.
+[[https://creativecommons.org/licenses/by/4.0/deed][CC-BY-4.0]]
+
+[[https://emacs.ch/@whhone][[[/icon-mastodon.svg]]]]
+[[mailto:whhone@gmail.com][[[/icon-email.svg]]]]
+[[/subscribe][[[/icon-rss.svg]]]]

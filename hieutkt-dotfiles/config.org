@@ -1,0 +1,2367 @@
+:PROPERTIES:
+:ID:       21f80d7d-00f7-4959-9ea2-d7e4b680b272
+:END:
+#+title: My Doom Emacs configurations
+#+startup: hideblocks content
+#+filetags: :compilation:tool:blogs:
+#+date: {{{modification-time(%Y-%m-%d)}}}
+#+latex_class: koma-article
+#+latex_compiler: xelatex
+#+latex_header: \usepackage{parskip}
+#+latex_header_extra: \usepackage{AlegreyaSans}
+#+latex_header_extra: \usepackage{libertinus}
+#+latex_header_extra: \usepackage[scale=0.80]{FiraMono}
+#+latex_header_extra: \addtokomafont{subsubsection}{\color{RoyalBlue!50!black}\AlegreyaSansMedium}
+#+latex_header_extra: \urlstyle{sf}
+#+latex_engraved_theme: doom-nord-light
+#+export_file_name: Doom-Emacs-config.md
+#+hugo_base_dir: ~/Dropbox/Blogs/hieutkt/
+#+hugo_section: ./resources/
+#+hugo_tags: Emacs
+#+hugo_url: /Doom-Emacs-config
+#+hugo_slug: Doom-Emacs-config
+#+hugo_custom_front_matter:
+#+hugo_draft: false
+#+options: toc:5 num:t H:5
+
+* Introduction :ignore:
+Emacs is certainly a strange piece of software.
+It was created in the 1970s and is still in active development until this day, preserving weird concepts like "buffers" and "frame" and "fontification" in its documentation.
+It calls the button =Ctrl= on modern keyboards as ~C~ and the =Alt= button as ~M~ (Meta).
+In default settings, you copy text by pressing ~M-w~ , "kill" (in modern language: cut) by ~C-w~, and paste by ~C-y~.
+In order to customize Emacs, you need to use a dedicated programming language called Emacs Lisp.
+
+But despite all that, Emacs has become the central piece of software that I use to interact with my computer.
+It's still just an text editor, but the one that you can spend hours to fine-tune it just the way you want it to be.
+In my journey to learn Emacs, I also learnt a lot about how my computer works.
+Along the way, I learnt how to code and I learnt how to write.
+These days, I learn about stuffs beyond the computer, yet Emacs is still my friend.
+
+This document describes how I set up my Emacs, in [[https://en.wikipedia.org/wiki/Literate_programming][literate programming]] style, using a plain text format closely related to Emacs called [[https://orgmode.org/][Org-mode]].
+The whole thing is contained in a [[https://raw.githubusercontent.com/hieutkt/dotfiles/main/emacs/.doom.d/config.org][single file]], from which both the Elisp code and this HTML document is generated.
+This Emacs configuration is built based on a configuration framework called [[https://github.com/doomemacs/][Doom Emacs]], hence the name of this document.
+
+* Prerequisites
+** Reproducible information
+This configuration is continuingly being improved.
+I build my own Emacs from source in order to take advantage of some experimental features.
+There are also =(packages! ...)=  calls to external Emacs packages that are not pinned to any specific version.
+As such, there might be incompabilities if one blindly copies codes from this configurations.
+Although I'll try to document which features are based on developing softwares and are likely to be changed in the future, it is inevitable that some bits of information are going to fall through the cracks.
+
+In this section, I reiterate the relevant info about the version of the software I'm using here, in case someone finds this infomation useful.
+Here's my current build of Emacs:
+
+#+begin_src emacs-lisp :exports output :tangle no :eval t
+(emacs-version)
+#+end_src
+
+#+RESULTS:
+: GNU Emacs 29.1 (build 1, x86_64-pc-linux-gnu, GTK+ Version 3.24.38, cairo version 1.17.8)
+:  of 2023-07-30
+
+This Emacs is built with the following configuration options:
+
+#+begin_src emacs-lisp :exports output :tangle no :eval t
+system-configuration-options
+#+end_src
+
+#+RESULTS:
+: --with-modules --with-json --with-mailutils --with-rsvg --with-native-compilation --with-xinput2 --with-xwidgets --with-gif --with-pgtk --with-tree-sitter
+
+#+begin_src emacs-lisp
+system-configuration-features
+#+end_src
+
+#+RESULTS:
+: ACL CAIRO DBUS FREETYPE GIF GLIB GMP GNUTLS GPM GSETTINGS HARFBUZZ JPEG JSON LCMS2 LIBSYSTEMD LIBXML2 MODULES NATIVE_COMP NOTIFY INOTIFY PDUMPER PGTK PNG RSVG SECCOMP SOUND SQLITE3 THREADS TIFF TOOLKIT_SCROLL_BARS TREE_SITTER WEBP XIM XWIDGETS GTK3 ZLIB
+
+* Fundamental setups
+** Some good defaults
+
+#+begin_src emacs-lisp
+;; Some functionality uses this to identify you, e.g. GPG configuration, email
+;; clients, file templates and snippets.
+(setq user-full-name "Hieu Phay"
+      user-mail-address "hieunguyen31371@gmail.com"
+      default-input-method 'vietnamese-telex
+      +doom-dashboard-banner-dir doom-private-dir
+      +doom-dashboard-banner-file "favicon-pixel.png"
+      +doom-dashboard-banner-padding '(0 . 2))
+
+;; Turn on pixel scrolling
+(pixel-scroll-precision-mode t)
+
+;; Turn on abbrev mode
+(setq-default abbrev-mode t)
+
+;; Start Doom fullscreen
+(add-to-list 'default-frame-alist '(width . 92))
+(add-to-list 'default-frame-alist '(height . 40))
+;; (add-to-list 'default-frame-alist '(alpha 97 100))
+
+;; If you use `org' and don't want your org files in the default location below,
+;; change `org-directory'. It must be set before org loads!
+(if (and (string-match-p "Windows" (getenv "PATH")) (not IS-WINDOWS))
+    (setq dropbox-directory "/mnt/c/Users/X380/Dropbox/")
+  (setq dropbox-directory "~/Dropbox/"))
+
+(setq org-directory (concat dropbox-directory "Notes/"))
+
+
+;; This determines the style of line numbers in effect. If set to `nil', line
+;; numbers are disabled. For relative line numbers, set this to `relative'.
+(setq display-line-numbers-type 'relative)
+(remove-hook! '(text-mode-hook) #'display-line-numbers-mode)
+
+(setq frame-title-format
+      '(""
+        (:eval
+         (if (s-contains-p org-roam-directory (or buffer-file-name ""))
+             (replace-regexp-in-string
+              ".*/[0-9]*-?" "☰ "
+              (subst-char-in-string ?_ ?  buffer-file-name))
+           "%b"))
+        (:eval
+         (let ((project-name (projectile-project-name)))
+           (unless (string= "-" project-name)
+             (format (if (buffer-modified-p)  " ◉ %s" "  ●  %s") project-name))))))
+#+end_src
+
+** Theme
+#+caption: Colors declarations in the dark variant of the Gruvbox color schemes.
+[[file:pics/gruvbox-colorscheme.png]]
+
+I have done a fair share of theme-hopping. In the end, I always come back the the dark variant of the [[https://github.com/morhetz/gruvbox][Gruvbox color scheme]].
+If you are viewing this on my website, you may find that this color scheme is ubiquitous here.
+
+#+begin_src emacs-lisp
+(setq doom-theme 'doom-gruvbox
+      doom-themes-treemacs-enable-variable-pitch nil)
+
+(use-package! doom-modeline
+  :config
+  (setq doom-modeline-persp-name t))
+#+end_src
+
+** Font configs
+*** Font choices
+[[https://typeof.net/Iosevka/][Iosevka]] is a great font with good coverage (excellent if you count its extension Sarasa Gothic).
+The narrow glyphs allow us to save some precious screen real estate.
+This is particularly useful for multitasking with multiple windows open.
+For example, my notetaking workflow involved having a small (not maximized) Emacs window, along with one or several windows for pdf viewers, often on a 13-inch laptop screen.
+You can see the benefit here.
+I cannot go back to non-narrow fonts anymore.
+
+It's even better that it allows me to cherry-pick glyphs that I like (or don't like).
+My customized Iosevka is based on the Ubuntu Mono style variant (SS12).
+This style brings me that nostalgic feel of my first linux distribution.
+The underscore =_= is more pronounced, which I like.
+The stylized letters (e.g. see =l=, =m=, =n=, =i=, =j=,...) bring forth a humanist, comfy yet quirky aesthetic.
+
+Below is my =private-build-plans.toml=, made with this [[https://typeof.net/Iosevka/customizer][lovely customizer]].
+The font compilation takes quite a while, though.
+Make sure to consult with the [[https://github.com/be5invis/Iosevka/blob/main/doc/custom-build.md][instructions]]:
+
+#+begin_src toml :tangle no
+[buildPlans.iosevka-custom]
+family = "Iosevka Custom"
+spacing = "normal"
+serifs = "sans"
+no-cv-ss = true
+export-glyph-names = false
+
+  [buildPlans.iosevka-custom.variants]
+  inherits = "ss12"
+
+    [buildPlans.iosevka-custom.variants.design]
+    lower-alpha = "crossing"
+    capital-gamma = "top-right-serifed"
+    zero = "dotted"
+    ampersand = "et-toothed"
+
+  [buildPlans.iosevka-custom.ligations]
+  inherits = "julia"
+#+end_src
+
+*** Setups
+Now to set all this up:
+
+#+begin_src emacs-lisp
+(when (doom-font-exists-p "Iosevka Custom")
+    (setq doom-font                (font-spec :name "Iosevka Custom" :size 14)))
+(when (doom-font-exists-p "Alegreya Sans")
+    (setq doom-variable-pitch-font (font-spec :name "Alegreya Sans"  :size 16)))
+(when (doom-font-exists-p "Noto Color Emoji")
+    (setq doom-unicode-font        (font-spec :name "Noto Color Emoji")))
+#+end_src
+
+Fallback font for non-ascii glyphs:
+
+#+begin_src emacs-lisp
+  (use-package! unicode-fonts
+    :config
+    ;; Common math symbols
+    (dolist (unicode-block '("Mathematical Alphanumeric Symbols"))
+      (push "JuliaMono" (cadr (assoc unicode-block unicode-fonts-block-font-mapping))))
+    (dolist (unicode-block '("Greek and Coptic"))
+      (push "Sarasa Mono CL" (cadr (assoc unicode-block unicode-fonts-block-font-mapping))))
+    ;; CJK characters
+    (dolist (unicode-block '("CJK Unified Ideographs" "CJK Symbols and Punctuation" "CJK Radicals Supplement" "CJK Compatibility Ideographs"))
+      (push "Sarasa Mono SC" (cadr (assoc unicode-block unicode-fonts-block-font-mapping))))
+    (dolist (unicode-block '("Hangul Syllables" "Hangul Jamo Extended-A" "Hangul Jamo Extended-B"))
+      (push "Sarasa Mono K" (cadr (assoc unicode-block unicode-fonts-block-font-mapping))))
+    )
+#+end_src
+
+*** Ligatures
+Emacs (since version 28 I think) handles ligatures pretty well.
+However, sometimes we still need to manually fix some ligature composition:
+
+#+begin_src emacs-lisp
+;; For Iosevka
+(set-char-table-range composition-function-table ?+ '(["\\(?:++++\\)" 0 font-shape-gstring]))
+;; For Alegreya/Alegreya Sans
+(set-char-table-range composition-function-table ?f '(["\\(?:ff?[fijltkbh]\\)" 0 font-shape-gstring]))
+;; (set-char-table-range composition-function-table ?T '(["\\(?:Th\\)" 0 font-shape-gstring]))
+#+end_src
+
+*** Mixed- and fixed-pitch fonts
+We should take care of =mixed-pitch-mode= here, too:
+
+#+begin_src emacs-lisp
+(use-package! mixed-pitch
+  :hook ((org-mode      . mixed-pitch-mode)
+         (org-roam-mode . mixed-pitch-mode)
+         (LaTeX-mode    . mixed-pitch-mode))
+  :config
+  (pushnew! mixed-pitch-fixed-pitch-faces
+            'warning
+            'org-drawer 'org-cite-key 'org-list-dt 'org-hide
+            'corfu-default 'font-latex-math-face)
+  (setq mixed-pitch-set-height t))
+#+end_src
+
+** Slightly transparent Emacs
+Emacs version 29 added a new frame parameter for "true" transparency, which means that only the blackground is transparent while the text is not.
+
+#+begin_src emacs-lisp
+(add-to-list 'default-frame-alist '(alpha-background . 96))
+#+end_src
+
+I set Emacs to be slightly transparent.
+With this setting, I can put Emacs at full screen while still being able to read from the windows behind it.
+This is very useful when screen real-estate is scarce (which is always the case!)
+** Modeline
+Some tweaks to =doom-modeline=:
+#+begin_src emacs-lisp
+(setq doom-modeline-height 35)
+#+end_src
+
+Show page number when viewing PDFs:
+
+#+begin_src emacs-lisp
+(doom-modeline-def-segment buffer-name
+  "Display the current buffer's name, without any other information."
+  (concat
+   doom-modeline-spc
+   (doom-modeline--buffer-name)))
+
+(doom-modeline-def-segment pdf-icon
+  "PDF icon from all-the-icons."
+  (concat
+   doom-modeline-spc
+   (doom-modeline-icon 'material "picture_as_pdf" nil nil
+                       :face (if (doom-modeline--active)
+                                 'all-the-icons-red
+                               'mode-line-inactive))))
+
+(defun doom-modeline-update-pdf-pages ()
+  "Update PDF pages."
+  (setq doom-modeline--pdf-pages
+        (let ((current-page-str (number-to-string (eval `(pdf-view-current-page))))
+              (total-page-str (number-to-string (pdf-cache-number-of-pages))))
+          (concat
+           (propertize
+            (concat (make-string (- (length total-page-str) (length current-page-str)) ? )
+                    " P" current-page-str)
+            'face 'mode-line)
+           (propertize (concat "/" total-page-str) 'face 'doom-modeline-buffer-minor-mode)))))
+
+(doom-modeline-def-segment pdf-pages
+  "Display PDF pages."
+  (if (doom-modeline--active) doom-modeline--pdf-pages
+    (propertize doom-modeline--pdf-pages 'face 'mode-line-inactive)))
+
+(doom-modeline-def-modeline 'pdf
+  '(bar window-number pdf-pages pdf-icon buffer-name)
+  '(misc-info matches major-mode process vcs))
+#+end_src
+** Narrowing and center buffer contents
+On larger screens I like buffer contents to not exceed a certain width and are centered.
+=olivetti-mode= solves this problem nicely.
+There is also an =auto-olivetti-mode=  which automatically turns on =olivetti-mode= in most buffers.
+
+#+begin_src emacs-lisp
+(use-package! olivetti
+  :config
+  (setq-default olivetti-body-width 130)
+  (add-hook 'mixed-pitch-mode-hook  (lambda () (setq-local olivetti-body-width 70))))
+
+(use-package! auto-olivetti
+  :custom
+  (auto-olivetti-enabled-modes '(text-mode prog-mode helpful-mode))
+  :config
+  (auto-olivetti-mode))
+#+end_src
+** Git gutter
+The =diff= changes are reflected in the left fringe.
+However, I find them to be a little bit too intrusive, so let's change how they looks by blending the colors into the background a little bit
+
+#+begin_src emacs-lisp
+(use-package! diff-hl
+  :config
+  (custom-set-faces!
+    `((diff-hl-change)
+      :foreground ,(doom-blend (doom-color 'bg) (doom-color 'blue) 0.5))
+    `((diff-hl-insert)
+      :foreground ,(doom-blend (doom-color 'bg) (doom-color 'green) 0.5)))
+  )
+#+end_src
+
+* Editing configurations
+** Evil
+#+begin_src emacs-lisp
+(use-package! evil-escape
+  :config
+  (setq evil-esc-delay 0.25))
+
+(use-package! evil-vimish-fold
+  :config
+  (global-evil-vimish-fold-mode))
+
+(use-package! evil-goggles
+  :init
+  (setq evil-goggles-enable-change t
+        evil-goggles-enable-delete t
+        evil-goggles-pulse         t
+        evil-goggles-duration      0.25)
+  :config
+  (custom-set-faces!
+    `((evil-goggles-yank-face evil-goggles-surround-face)
+      :background ,(doom-blend (doom-color 'blue) (doom-color 'bg-alt) 0.5)
+      :extend t)
+    `(evil-goggles-paste-face
+      :background ,(doom-blend (doom-color 'green) (doom-color 'bg-alt) 0.5)
+      :extend t)
+    `(evil-goggles-delete-face
+      :background ,(doom-blend (doom-color 'red) (doom-color 'bg-alt) 0.5)
+      :extend t)
+    `(evil-goggles-change-face
+      :background ,(doom-blend (doom-color 'orange) (doom-color 'bg-alt) 0.5)
+      :extend t)
+    `(evil-goggles-commentary-face
+      :background ,(doom-blend (doom-color 'grey) (doom-color 'bg-alt) 0.5)
+      :extend t)
+    `((evil-goggles-indent-face evil-goggles-join-face evil-goggles-shift-face)
+      :background ,(doom-blend (doom-color 'yellow) (doom-color 'bg-alt) 0.25)
+      :extend t)
+    ))
+#+end_src
+
+** Completions
+*** Corfu defaults
+#+begin_src emacs-lisp
+(setq corfu-auto-delay 0.5)
+#+end_src
+
+Enable corfu in the minibuffer:
+
+#+begin_src emacs-lisp
+(use-package! corfu
+  :config
+  (defun corfu-enable-in-minibuffer ()
+    "Enable Corfu in the minibuffer if `completion-at-point' is bound."
+    (when (where-is-internal #'completion-at-point (list (current-local-map)))
+      ;; (setq-local corfu-auto nil) ;; Enable/disable auto completion
+      (setq-local corfu-echo-delay nil ;; Disable automatic echo and popup
+                  corfu-popupinfo-delay nil)
+      (corfu-mode 1)))
+  (add-hook 'minibuffer-setup-hook #'corfu-enable-in-minibuffer))
+#+end_src
+
+Set orderless matching styles to include =char-fold-to-regexp=.
+
+#+begin_src emacs-lisp
+(use-package! orderless
+  :config
+  (add-to-list 'orderless-matching-styles 'char-fold-to-regexp))
+#+end_src
+
+*** Smaller popup text
+Automatic documentation popup while autocompleting is nice, but let's reduce the font size a little bit so that it doesn't cover the screen too much and makes it easier to skim for information:
+
+#+begin_src emacs-lisp
+(custom-set-faces! '((corfu-popupinfo) :height 0.9))
+#+end_src
+
+*** Corfu-Yasnippet
+Suggest yasnippet as completion.
+
+#+begin_src emacs-lisp
+(use-package! cape-yasnippet
+  :after (corfu yasnippet)
+  :init
+  (add-to-list 'completion-at-point-functions #'cape-yasnippet))
+#+end_src
+*** Kind-icon configurations
+Kind-icon adds icons to =corfu= completions based on the =:company-kind= property.
+Let's add this properties to those that don't provide them.
+
+#+begin_src emacs-lisp
+(after! org-roam
+  ;; Define advise
+  (defun hp/org-roam-capf-add-kind-property (orig-fun &rest args)
+    "Advice around `org-roam-complete-link-at-point' to add :company-kind property."
+    (let ((result (apply orig-fun args)))
+      (append result '(:company-kind (lambda (_) 'org-roam)))))
+  ;; Wraps around the relevant functions
+  (advice-add 'org-roam-complete-link-at-point :around #'hp/org-roam-capf-add-kind-property)
+  (advice-add 'org-roam-complete-everywhere :around #'hp/org-roam-capf-add-kind-property))
+
+(after! citar
+  ;; Define advise
+  (defun hp/citar-capf-add-kind-property (orig-fun &rest args)
+    "Advice around `org-roam-complete-link-at-point' to add :company-kind property."
+    (let ((result (apply orig-fun args)))
+      (append result '(:company-kind (lambda (_) 'reference)))))
+  ;; Wraps around the relevant functions
+  (advice-add 'citar-capf :around #'hp/citar-capf-add-kind-property))
+#+end_src
+
+Now, we can implement custom icons for Org-roam completions:
+
+#+begin_src emacs-lisp
+(after! (org-roam kind-icon)
+  (add-to-list
+   'kind-icon-mapping
+   '(org-roam     "or" :icon "symbol-interface"   :collection "vscode" :face font-lock-type-face)))
+#+end_src
+
+** Language server protocol (LSP)
+#+begin_src emacs-lisp
+(use-package! lsp-ui
+  :config
+  (setq lsp-ui-doc-delay 2
+        lsp-ui-doc-max-width 80)
+  (setq lsp-signature-function 'lsp-signature-posframe))
+#+end_src
+
+** Yasnippet
+
+#+begin_src emacs-lisp
+(use-package! yasnippet
+  :config
+  ;; It will test whether it can expand, if yes, change cursor color
+  (defun hp/change-cursor-color-if-yasnippet-can-fire (&optional field)
+    (interactive)
+    (setq yas--condition-cache-timestamp (current-time))
+    (let (templates-and-pos)
+      (unless (and yas-expand-only-for-last-commands
+                   (not (member last-command yas-expand-only-for-last-commands)))
+        (setq templates-and-pos (if field
+                                    (save-restriction
+                                      (narrow-to-region (yas--field-start field)
+                                                        (yas--field-end field))
+                                      (yas--templates-for-key-at-point))
+                                  (yas--templates-for-key-at-point))))
+      (set-cursor-color (if (and templates-and-pos (first templates-and-pos)
+                                 (eq evil-state 'insert))
+                            (doom-color 'red)
+                          (face-attribute 'default :foreground)))))
+  :hook (post-command . hp/change-cursor-color-if-yasnippet-can-fire))
+#+end_src
+
+** Citations
+
+#+begin_src emacs-lisp
+(use-package! citar
+  :hook
+  (LaTeX-mode . citar-capf-setup)
+  (org-mode . citar-capf-setup)
+  :config
+  (setq
+   citar-bibliography (list (concat org-directory "/References/zotero.bib"))
+   citar-notes-paths (list(concat org-directory "/Org-roam/literature/"))
+   citar-library-paths (list (concat org-directory "/Org-roam/"))
+   citar-file-variable "file"
+   citar-symbols
+   `((file ,(all-the-icons-faicon "file-pdf-o" :face 'all-the-icons-red :v-adjust -0.1) . " ")
+     (note ,(all-the-icons-material "speaker_notes" :face 'all-the-icons-blue :v-adjust -0.3) . " ")
+     (link ,(all-the-icons-material "link" :face 'all-the-icons-blue) . " "))
+   citar-symbol-separator "  "
+   org-cite-global-bibliography citar-bibliography)
+  ;; Search contents of PDFs
+  (after! (embark pdf-occur)
+    (defun citar/search-pdf-contents (keys-entries &optional str)
+      "Search pdfs."
+      (interactive (list (citar-select-refs)))
+      (let ((files (citar-file--files-for-multiple-entries
+                    (citar--ensure-entries keys-entries)
+                    citar-library-paths
+                    '("pdf")))
+            (search-str (or str (read-string "Search string: "))))
+        (pdf-occur-search files search-str t)))
+    ;; with this, you can exploit embark's multitarget actions, so that you can run `embark-act-all`
+    (add-to-list 'embark-multitarget-actions #'citar/search-pdf-contents)))
+#+end_src
+** Workspaces
+#+begin_src emacs-lisp
+(defadvice! hp/config-in-its-own-workspace (&rest _)
+  "Open Elfeeds in its own workspace."
+  :before #'doom/find-file-in-private-config
+  (when (modulep! :ui workspaces)
+    (+workspace-switch "Configs" t)))
+#+end_src
+
+** Miscellaneous
+Gonna clean this up later:
+
+#+begin_src emacs-lisp
+(use-package! ansi-color
+  :config
+  (defun hp/display-ansi-colors ()
+    (interactive)
+    (ansi-color-apply-on-region (point-min) (point-max))))
+
+(use-package! page-break-lines
+  :hook (prog-mode . page-break-lines-mode)
+  :init
+  (autoload 'turn-on-page-break-lines-mode "page-break-lines")
+  :config
+  (setq page-break-lines-max-width fill-column))
+
+(use-package! pdf-occur)
+
+(use-package! epa
+  :config
+  (epa-file-enable))
+#+end_src
+
+* Major modes and language-specific configurations
+** Org-mode
+I came to Emacs for coding, but eventually what kept me using it is Org-mode.
+In fact, I spend most of my time in an Org-mode buffer.
+It's just that good.
+*** Basics
+
+#+begin_src emacs-lisp
+(use-package! org
+  :config
+  (setq org-highlight-links
+        '(bracket angle plain tag date footnote))
+  ;; Setup custom links
+  (+org-init-custom-links-h))
+#+end_src
+
+*** Org-tempo
+#+begin_src emacs-lisp
+(use-package! org-tempo
+  :after org
+  :config
+  ;;Hugo shortcodes
+  (tempo-define-template
+   "Hugo info" '("#+attr_shortcode: info\n#+begin_notice\n" p "\n#+end_notice">)
+   "<info")
+  (tempo-define-template
+   "Hugo tip" '("#+attr_shortcode:tip\n#+begin_notice\n" p "\n#+end_notice">)
+   "<tip")
+  (tempo-define-template
+   "Hugo warning" '("#+attr_shortcode: warning\n#+begin_notice\n" p "\n#+end_notice">)
+   "<warning")
+  (tempo-define-template
+   "Hugo error" '("#+attr_shortcode: error\n#+begin_notice\n" p "\n#+end_notice">)
+   "<error")
+  (tempo-define-template
+   "Hugo example" '("#+attr_shortcode: example\n#+begin_notice\n" p "\n#+end_notice">)
+   "<example")
+  (tempo-define-template
+   "Hugo question" '("#+attr_shortcode: question\n#+begin_notice\n" p "\n#+end_notice">)
+   "<question")
+  )
+#+end_src
+
+*** Visual-related configs
+Since I spend most of my time writing in Org-mode, might as well make it looks nice.
+**** Custom faces
+
+#+begin_src emacs-lisp
+(after! org
+  ;; Set some faces
+  (custom-set-faces!
+    `((org-quote)
+      :foreground ,(doom-color 'blue) :extend t)
+    `((org-block-begin-line org-block-end-line)
+      :background ,(doom-color 'bg)))
+  ;; Change how LaTeX and image previews are shown
+  (setq org-highlight-latex-and-related '(native entities script)
+        org-image-actual-width (min (/ (display-pixel-width) 3) 800)))
+#+end_src
+
+Emacs version 29 can now tell the difference between 'regular' or  'normal' font weights and 'medium' weights.
+Let's use the medium weights for org-mode headings.
+
+#+begin_src emacs-lisp
+(after! org-mode
+  (custom-set-faces!
+    `((org-document-title)
+      :foreground ,(face-attribute 'org-document-title :foreground)
+      :height 1.3 :weight bold)
+    `((org-level-1)
+      :foreground ,(face-attribute 'outline-1 :foreground)
+      :height 1.1 :weight medium)
+    `((org-level-2)
+      :foreground ,(face-attribute 'outline-2 :foreground)
+      :weight medium)
+    `((org-level-3)
+      :foreground ,(face-attribute 'outline-3 :foreground)
+      :weight medium)
+    `((org-level-4)
+      :foreground ,(face-attribute 'outline-4 :foreground)
+      :weight medium)
+    `((org-level-5)
+      :foreground ,(face-attribute 'outline-5 :foreground)
+      :weight medium)))
+#+end_src
+
+**** Font-lock settings
+
+#+begin_src emacs-lisp
+(after! org
+  ;; Custom regex fontifications
+  (font-lock-add-keywords 'org-mode
+                          '(("^\\(?:[  ]*\\)\\(?:[-+]\\|[ ]+\\*\\|\\(?:[0-9]+\\|[A-Za-z]\\)[.)]\\)?[ ]+"
+                             . 'fixed-pitch)))
+  (font-lock-add-keywords 'org-mode '(("(\\?)" . 'error)))
+
+  ;; Highlight first letter of a paragraph
+  ;; (font-lock-add-keywords 'org-mode '(("^\\(?:\n\\)\\([[:digit:][:upper:][:lower:]]\\)" . 'org-warning)))
+  )
+#+end_src
+
+**** Prettify symbols
+Org-mode syntax supports having two consecutive dashes =--= as to be exported as the en-dash (=–=) and three consecutive dashes =---= to be exported as the em-dash (=—=).
+It's good to have these symbols automatically prettified in an Org-buffer too.
+
+[[file:pics/org-em-dash.png]]
+
+However, the problem is that =prettify-symbol-mode= doesn't replace the symbols right after a word or inside quotes, which are the two major use-case for the em-dash (=—=).
+To remedy this problem, we need to write a custom function and set it to =prettify-symbols-compose-predicate=.
+
+#+begin_src emacs-lisp
+(after! org
+  ;; Prettification should ignore preceding letters
+  (defun prettify-symbols-compose-in-text-mode-p (start end _match)
+    "Similar to `prettify-symbols-default-compose-p' but ignore letters or words."
+    ;; Check that the chars should really be composed into a symbol.
+    (let* ((syntaxes-beg (if (memq (char-syntax (char-after start)) '(?_))
+                             '(?_) '(?. ?\\)))
+           (syntaxes-end (if (memq (char-syntax (char-before end)) '(?_))
+                             '(?_) '(?. ?\\))))
+      (not (or (memq (char-syntax (or (char-before start) ?\s)) syntaxes-beg)
+               (memq (char-syntax (or (char-after end) ?\s)) syntaxes-end)
+               ;; (nth 8 (syntax-ppss))
+               (org-in-src-block-p)
+               ))))
+  ;; Replace two consecutive hyphens with the em-dash
+  (defun hp/org-mode-load-prettify-symbols ()
+    (interactive)
+    (pushnew! prettify-symbols-alist
+              '("--"  . "–") '("---" . "—")
+              '("(?)" . "") '("(?)." . "") '("(?)," . ""))
+    (modify-syntax-entry ? " ")
+    (prettify-symbols-mode 1)
+    ;; Now, set the value of this
+    (setq-local prettify-symbols-compose-predicate 'prettify-symbols-compose-in-text-mode-p)
+    )
+  (when (not IS-WINDOWS)
+    (add-hook 'org-mode-hook 'hp/org-mode-load-prettify-symbols)))
+#+end_src
+**** Turn off highlighting current line
+Highlight mode is nice.
+However, in an Org-mode buffer, I feel like it might be too much.
+Let's turn off =hl-line-mode= in text buffers for now.
+
+#+begin_src emacs-lisp
+(add-hook 'text-mode-hook (lambda () (hl-line-mode -1)))
+#+end_src
+
+**** Org-modern and svg-tag-mode
+=org-modern= is really cool -- especially when combined with =svg-tag-mode=.
+The only downside is it doesn't play well with =org-indent-mode= (for now).
+
+#+begin_src emacs-lisp
+(use-package! org-modern
+  :hook (org-mode . org-modern-mode)
+  :config
+  (setq
+   ;; Edit settings
+   org-catch-invisible-edits 'show-and-error
+   org-special-ctrl-a/e t
+   org-insert-heading-respect-content t
+   ;; Appearance
+   org-modern-radio-target    '("❰" t "❱")
+   org-modern-internal-target '("↪ " t "")
+   org-modern-todo nil
+   org-modern-tag nil
+   org-modern-timestamp t
+   org-modern-statistics nil
+   org-modern-progress nil
+   org-modern-priority nil
+   org-modern-horizontal-rule "──────────"
+   org-modern-hide-stars "·"
+   org-modern-star ["⁖"]
+   org-modern-keyword "‣"
+   org-modern-list '((43 . "•")
+                     (45 . "–")
+                     (42 . "↪")))
+  (custom-set-faces!
+    `((org-modern-tag)
+      :background ,(doom-blend (doom-color 'blue) (doom-color 'bg) 0.1)
+      :foreground ,(doom-color 'grey))
+    `((org-modern-radio-target org-modern-internal-target)
+      :inherit 'default :foreground ,(doom-color 'blue)))
+  )
+#+end_src
+
+The configurations for =svg-tag-mode= go here, too:
+
+#+begin_src emacs-lisp
+(use-package! svg-tag-mode
+  :config
+  (defconst date-re "[0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}")
+  (defconst time-re "[0-9]\\{2\\}:[0-9]\\{2\\}")
+  (defconst day-re "[A-Za-z]\\{3\\}")
+  (defconst day-time-re (format "\\(%s\\)? ?\\(%s\\)?" day-re time-re))
+
+  (defun svg-progress-percent (value)
+    (svg-image (svg-lib-concat
+                (svg-lib-progress-bar
+                 (/ (string-to-number value) 100.0) nil
+                 :height 0.8 :foreground (doom-color 'fg) :background (doom-color 'bg)
+                 :margin 0 :stroke 2 :radius 3 :padding 2 :width 11)
+                (svg-lib-tag (concat value "%") nil
+                             :height 0.8 :foreground (doom-color 'fg) :background (doom-color 'bg)
+                             :stroke 0 :margin 0)) :ascent 'center))
+
+  (defun svg-progress-count (value)
+    (let* ((seq (mapcar #'string-to-number (split-string value "/")))
+           (count (float (car seq)))
+           (total (float (cadr seq))))
+      (svg-image (svg-lib-concat
+                  (svg-lib-progress-bar (/ count total) nil
+                                        :foreground (doom-color 'fg)
+                                        :background (doom-color 'bg) :height 0.8
+                                        :margin 0 :stroke 2 :radius 3 :padding 2 :width 11)
+                  (svg-lib-tag value nil
+                               :foreground (doom-color 'fg)
+                               :background (doom-color 'bg)
+                               :stroke 0 :margin 0 :height 0.8)) :ascent 'center)))
+
+  (set-face-attribute 'svg-tag-default-face nil :family "Alegreya Sans")
+  (setq svg-tag-tags
+        `(;; Progress e.g. [63%] or [10/15]
+          ("\\(\\[[0-9]\\{1,3\\}%\\]\\)" . ((lambda (tag)
+                                              (svg-progress-percent (substring tag 1 -2)))))
+          ("\\(\\[[0-9]+/[0-9]+\\]\\)" . ((lambda (tag)
+                                            (svg-progress-count (substring tag 1 -1)))))
+          ;; Task priority e.g. [#A], [#B], or [#C]
+          ("\\[#A\\]" . ((lambda (tag) (svg-tag-make tag :face 'error :inverse t :height .85
+                                                     :beg 2 :end -1 :margin 0 :radius 10))))
+          ("\\[#B\\]" . ((lambda (tag) (svg-tag-make tag :face 'warning :inverse t :height .85
+                                                     :beg 2 :end -1 :margin 0 :radius 10))))
+          ("\\[#C\\]" . ((lambda (tag) (svg-tag-make tag :face 'org-todo :inverse t :height .85
+                                                     :beg 2 :end -1 :margin 0 :radius 10))))
+          ;; Keywords
+          ("TODO" . ((lambda (tag) (svg-tag-make tag :inverse t :height .85 :face 'org-todo))))
+          ("HOLD" . ((lambda (tag) (svg-tag-make tag :height .85 :face 'org-todo))))
+          ("DONE\\|STOP" . ((lambda (tag) (svg-tag-make tag :inverse t :height .85 :face 'org-done))))
+          ("NEXT\\|WAIT" . ((lambda (tag) (svg-tag-make tag :inverse t :height .85 :face '+org-todo-active))))
+          ("REPEAT\\|EVENT\\|PROJ\\|IDEA" .
+           ((lambda (tag) (svg-tag-make tag :inverse t :height .85 :face '+org-todo-project))))
+          ("REVIEW" . ((lambda (tag) (svg-tag-make tag :inverse t :height .85 :face '+org-todo-onhold))))))
+
+  :hook (org-mode . svg-tag-mode)
+  )
+#+end_src
+
+**** Org-appear
+=org-appear= for seemless look:
+
+#+begin_src emacs-lisp
+(use-package! org-appear
+  :hook
+  (org-mode . org-appear-mode)
+  :config
+  (setq org-hide-emphasis-markers t
+        org-appear-autolinks 'just-brackets))
+#+end_src
+
+**** Org-CSL-activate
+Similarly, for CSL citations formatting in an Org buffer:
+
+#+begin_src emacs-lisp
+(use-package! oc-csl-activate
+  :config
+  (setq org-cite-activate-processor 'csl-activate)
+  (setq org-cite-csl-activate-use-document-style t)
+  (setq org-cite-csl-activate-use-document-locale t)
+  (add-hook 'org-mode-hook
+            (lambda ()
+              (cursor-sensor-mode 1)
+              (org-cite-csl-activate-render-all))))
+#+end_src
+*** Previewing LaTeX fragments
+**** General configurations
+This part is about visuals, but it also relates to how Org-export  works(in particular, to LaTeX), so I split this into a separate section.
+
+#+caption: An example of how LaTex equations are rendered in an Org-mode buffer
+[[file:pics/org-latex-preview.png]]
+
+There are three supported backends for creating these previews: =dvipng=, =dvisvgm=, and =imagemagick=.
+=dvipng= is the fastest, however, it has trouble with rendering Tikz figures.
+So, =dvisvgm= is my choice.
+The rendered SVGs also looks extra cripsy, which I like.
+One small caveat is that Emacs has to be build with support for SVG, with the =--with-rsvg= flag.
+If not then =imagemagick= is fine, although it's very slow.
+
+#+begin_src emacs-lisp
+(if (string-match-p "RSVG" system-configuration-features)
+    (setq org-latex-preview-default-process 'dvisvgm)
+    (setq org-latex-preview-default-process 'dvipng))
+#+end_src
+
+If we use =imagemagick=, remember that you have to comment out this line in =/etc/ImageMagick-6/policy.xml=:
+
+#+begin_example xml
+<policy domain="coder" rights="none" pattern="PDF" />
+#+end_example
+
+Or run this command:
+
+#+begin_example bash
+sed -i '/disable ghostscript format types/,+6d' /etc/ImageMagick-6/policy.xml
+#+end_example
+
+With all that set up, let's configure =org-latex-preview=:
+
+#+begin_src emacs-lisp
+(use-package! org-latex-preview
+  :after org
+  :hook ((org-mode . org-latex-preview-auto-mode))
+  :config
+  (pushnew! org-latex-preview--ignored-faces 'org-list-dt 'fixed-pitch)
+  (setq org-latex-preview-numbered     t
+        org-startup-with-latex-preview t
+        org-latex-preview-width 0.6
+        org-latex-preview-processing-indicator 'face
+        ;;live previewing
+        org-latex-preview-live-preview-fragments t
+        org-latex-preview-auto-generate 'live
+        org-latex-preview-debounce 0.5
+        org-latex-preview-throttle 0.2
+        org-latex-preview-live-preview-fragments nil
+        ;;previewing preamble
+        org-latex-preview-preamble
+        "\\documentclass{article}\n[DEFAULT-PACKAGES]\n[PACKAGES]
+\\usepackage[dvipsnames,svgnames]{xcolor}
+\\usepackage[sfdefault]{AlegreyaSans}
+\\usepackage{newtxsf}
+
+\\definecolor{DarkRed}{RGB}{204,36,29}
+\\definecolor{ForestGreen}{RGB}{184,187,38}
+\\definecolor{red}{RGB}{251,73,52}
+\\definecolor{orange}{RGB}{254,128,25}
+\\definecolor{blue}{RGB}{69,133,136}
+\\definecolor{green}{RGB}{184,187,38}
+\\definecolor{yellow}{RGB}{250, 189, 47}
+\\definecolor{purple}{RGB}{211, 134, 155}
+"))
+#+end_src
+
+**** Transparent background for org-block
+However, by using native highlighting the org-block face is added, and that doesn’t look too great — particularly when the fragments are previewed.
+Ideally =org-src-font-lock-fontify-block= wouldn’t add the =org-block= face, but we can avoid advising that entire function by just adding another face with =:inherit default= which will override the background colour.
+
+#+begin_src emacs-lisp
+(after! org-src
+  (add-to-list 'org-src-block-faces '("latex" (:inherit default :extend t))))
+#+end_src
+**** Ugly patch for Ox-hugo export
+
+#+begin_src emacs-lisp
+(defun org-html-format-latex (latex-frag processing-type info)
+  "Format a LaTeX fragment LATEX-FRAG into HTML.
+PROCESSING-TYPE designates the tool used for conversion.  It can
+be `mathjax', `verbatim', `html', nil, t or symbols in
+`org-preview-latex-process-alist', e.g., `dvipng', `dvisvgm' or
+`imagemagick'.  See `org-html-with-latex' for more information.
+INFO is a plist containing export properties."
+  (let ((cache-relpath "") (cache-dir ""))
+    (unless (or (eq processing-type 'mathjax)
+                (eq processing-type 'html))
+      (let ((bfn (or (buffer-file-name)
+             (make-temp-name
+              (expand-file-name "latex" temporary-file-directory))))
+        (latex-header
+         (let ((header (plist-get info :latex-header)))
+           (and header
+            (concat (mapconcat
+                 (lambda (line) (concat "#+LATEX_HEADER: " line))
+                 (org-split-string header "\n")
+                 "\n")
+                "\n")))))
+    (setq cache-relpath
+          (concat (file-name-as-directory org-preview-latex-image-directory)
+              (file-name-sans-extension
+               (file-name-nondirectory bfn)))
+          cache-dir (file-name-directory bfn))
+    ;; Re-create LaTeX environment from original buffer in
+    ;; temporary buffer so that dvipng/imagemagick can properly
+    ;; turn the fragment into an image.
+    (setq latex-frag (concat latex-header latex-frag))))
+    (with-temp-buffer
+      (insert latex-frag)
+      (org-format-latex cache-relpath nil nil cache-dir nil
+            "Creating LaTeX Image..." nil processing-type)
+      (buffer-string))))
+#+end_src
+*** Org-export
+**** General
+#+begin_src emacs-lisp
+(use-package! ox
+  :config
+  (setq org-export-with-tags nil)
+  ;; Auto export acronyms as small caps
+  ;; Copied from tecosaur
+  (defun org-latex-substitute-verb-with-texttt (content)
+    "Replace instances of \\verb with \\texttt{}."
+    (replace-regexp-in-string
+     "\\\\verb\\(.\\).+?\\1"
+     (lambda (verb-string)
+       (replace-regexp-in-string
+        "\\\\" "\\\\\\\\" ; Why elisp, why?
+        (org-latex--text-markup (substring verb-string 6 -1) 'code '(:latex-text-markup-alist ((code . protectedtexttt))))))
+     content))
+
+  (defun org-export-filter-text-acronym (text backend _info)
+    "Wrap suspected acronyms in acronyms-specific formatting.
+Treat sequences of 2+ capital letters (optionally succeeded by \"s\") as an acronym.
+Ignore if preceeded by \";\" (for manual prevention) or \"\\\" (for LaTeX commands).
+
+TODO abstract backend implementations."
+    (let ((base-backend
+           (cond
+            ;; ((org-export-derived-backend-p backend 'latex) 'latex)
+            ((org-export-derived-backend-p backend 'html) 'html)))
+          (case-fold-search nil))
+      (when base-backend
+        (replace-regexp-in-string
+         "[;\\\\]?\\b[A-Z][A-Z]+s?\\(?:[^A-Za-z]\\|\\b\\)"
+         (lambda (all-caps-str)
+           (cond ((equal (aref all-caps-str 0) ?\\) all-caps-str)                ; don't format LaTeX commands
+                 ((equal (aref all-caps-str 0) ?\;) (substring all-caps-str 1))  ; just remove not-acronym indicator char ";"
+                 (t (let* ((final-char (if (string-match-p "[^A-Za-z]" (substring all-caps-str -1 (length all-caps-str)))
+                                           (substring all-caps-str -1 (length all-caps-str))
+                                         nil)) ; needed to re-insert the [^A-Za-z] at the end
+                           (trailing-s (equal (aref all-caps-str (- (length all-caps-str) (if final-char 2 1))) ?s))
+                           (acr (if final-char
+                                    (substring all-caps-str 0 (if trailing-s -2 -1))
+                                  (substring all-caps-str 0 (+ (if trailing-s -1 (length all-caps-str)))))))
+                      (pcase base-backend
+                        ('latex (concat "\\acr{" (s-downcase acr) "}" (when trailing-s "\\acrs{}") final-char))
+                        ('html (concat "<span class='smallcap'>" (s-downcase acr) "</span>" (when trailing-s "<small>s</small>") final-char)))))))
+         text t t))))
+
+  (add-to-list 'org-export-filter-plain-text-functions
+               #'org-export-filter-text-acronym)
+
+  ;; We won't use `org-export-filter-headline-functions' because it
+  ;; passes (and formats) the entire section contents. That's no good.
+
+  (defun org-html-format-headline-acronymised (todo todo-type priority text tags info)
+    "Like `org-html-format-headline-default-function', but with acronym formatting."
+    (org-html-format-headline-default-function
+     todo todo-type priority (org-export-filter-text-acronym text 'html info) tags info))
+  (setq org-html-format-headline-function #'org-html-format-headline-acronymised)
+
+  ;; (defun org-latex-format-headline-acronymised (todo todo-type priority text tags info)
+  ;;   "Like `org-latex-format-headline-default-function', but with acronym formatting."
+  ;;   (org-latex-format-headline-default-function
+  ;;    todo todo-type priority (org-latex-substitute-verb-with-texttt
+  ;;                             (org-export-filter-text-acronym text 'latex info)) tags info))
+  ;; (setq org-latex-format-headline-function #'org-latex-format-headline-acronymised)
+  )
+#+end_src
+
+This allows ignoring headlines when exporting by adding the tag =:ignore:=  to an Org heading.
+
+#+begin_src emacs-lisp
+(use-package! ox-extra
+  :config
+  (ox-extras-activate '(ignore-headlines)))
+#+end_src
+**** Export to LaTeX
+
+#+begin_src emacs-lisp
+(use-package! ox-latex
+  :config
+  ;; (setq org-latex-pdf-process
+  ;;       '("latexmk -pdflatex='%latex -shell-escape -bibtex -interaction=nonstopmode' -pdf -output-directory=%o -f %f"))
+
+  ;; Default packages
+  (setq org-export-headline-levels 5
+        org-latex-default-packages-alist
+        '(("AUTO" "inputenc" t ("pdflatex"))
+          ("T1" "fontenc" t ("pdflatex"))
+          ;;Microtype
+          ;;- pdflatex: full microtype features, fast, however no fontspec
+          ;;- lualatex: good microtype feature support, however slow to compile
+          ;;- xelatex: only protrusion support, fast compilation
+          ("activate={true,nocompatibility},final,tracking=true,kerning=true,spacing=true,factor=1100,stretch=10,shrink=10"
+           "microtype" nil ("pdflatex"))
+          ("activate={true,nocompatibility},final,tracking=true,factor=1100,stretch=10,shrink=10"
+           "microtype" nil ("lualatex"))
+          ("protrusion={true,nocompatibility},final,factor=1100,stretch=10,shrink=10"
+           "microtype" nil ("xelatex"))
+          ("dvipsnames,svgnames" "xcolor" nil)
+          ("colorlinks=true, linkcolor=DarkBlue, citecolor=BrickRed, urlcolor=DarkGreen" "hyperref" nil))))
+#+end_src
+
+Add KOMA-scripts classes to org export:
+
+#+begin_src emacs-lisp
+(after! ox
+  ;; Add KOMA-scripts classes to org export
+  (add-to-list 'org-latex-classes
+               '("koma-letter" "\\documentclass[11pt]{scrletter}"
+                 ("\\section{%s}" . "\\section*{%s}")
+                 ("\\subsection{%s}" . "\\subsection*{%s}")
+                 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+                 ("\\paragraph{%s}" . "\\paragraph*{%s}")
+                 ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+
+  (add-to-list 'org-latex-classes
+               '("koma-article" "\\documentclass[11pt]{scrartcl}"
+                 ("\\section{%s}" . "\\section*{%s}")
+                 ("\\subsection{%s}" . "\\subsection*{%s}")
+                 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")
+                 ("\\paragraph{%s}" . "\\paragraph*{%s}")
+                 ("\\subparagraph{%s}" . "\\subparagraph*{%s}")))
+
+  (add-to-list 'org-latex-classes
+               '("koma-report" "\\documentclass[11pt]{scrreprt}"
+                 ("\\part{%s}" . "\\part*{%s}")
+                 ("\\chapter{%s}" . "\\chapter*{%s}")
+                 ("\\section{%s}" . "\\section*{%s}")
+                 ("\\subsection{%s}" . "\\subsection*{%s}")
+                 ("\\subsubsection{%s}" . "\\subsubsection*{%s}")))
+
+  (add-to-list 'org-latex-classes
+               '("koma-book" "\\documentclass[11pt]{scrbook}"
+                 ("\\part{%s}" . "\\part*{%s}")
+                 ("\\chapter{%s}" . "\\chapter*{%s}")
+                 ("\\section{%s}" . "\\section*{%s}")
+                 ("\\subsection{%s}" . "\\subsection*{%s}")
+                 ("\\subsubsection{%s}" . "\\subsubsection*{%s}"))))
+
+(setq org-latex-default-class "koma-article")
+#+end_src
+
+This part controls how code blocks (verbatims) are handled.
+In the past, this is done via a LaTeX package called =minted=, which gives =pygments=-style syntax highlighting to codes.
+However, in recent changes, Org-mode provide its own highlighting backend -- =engraved= -- which translates Emacs' font-lock overlays to LaTeX, results in much better color schemes and "smarter" syntax highlighting, as this potentially works with the Language Server Protocol and =tree-sitter=.
+
+#+begin_src emacs-lisp
+(after! ox-latex
+  (setq org-latex-src-block-backend 'engraved))
+#+end_src
+
+**** Export to website with =ox-hugo=
+***** General config :ignore:
+#+begin_src emacs-lisp
+(use-package! ox-hugo
+  :config
+  (setq org-hugo-use-code-for-kbd t
+        org-use-tag-inheritance   t
+        org-hugo-paired-shortcodes "sidenote marginnote notice"
+        org-hugo-base-dir (concat dropbox-directory "Blogs/hieutkt")))
+#+end_src
+***** Linking between different Org-roam files
+
+#+begin_src emacs-lisp
+(setq org-id-extra-files (directory-files-recursively org-roam-directory "\.org$"))
+#+end_src
+
+***** Exporting footnotes as sidenotes
+My website features Tufte-CSS-style sidenotes.
+With =hugo=, this is implemented by wrapping text around the =sidenote= shortcode.
+It would be nice if footnotes are exported as sidenotes here for Hugo export and as regular footnotes elsewhere[fn:1].
+Here's the code to implement this, based on [[https://takeonrules.com/2023/01/22/hacking-org-mode-export-for-footnotes-as-sidenotes/][this blog post]] with some modifications.
+
+#+begin_src emacs-lisp
+(defun hp/org-hugo-export-footnote-as-sidenote (footnote-reference _contents info)
+  "Transcode a FOOTNOTE-REFERENCE element from Org to Markdown.
+CONTENTS is nil.  INFO is a plist used as a communication
+channel."
+  (let* ((n (org-export-get-footnote-number footnote-reference info))
+         (def (org-export-get-footnote-definition footnote-reference info))
+         (def-exported (when def (org-export-data def info))))
+    (format "{{< sidenote >}}%s{{< /sidenote >}}" def-exported)))
+
+;; Over-write the custom blackfriday export for footnote links.
+(advice-add #'org-blackfriday-footnote-reference
+            :override #'hp/org-hugo-export-footnote-as-sidenote
+            '((name . "wrapper")))
+
+;; Don't render the section for export
+(advice-add #'org-blackfriday-footnote-section
+            :override (lambda (&rest rest) ())
+            '((name . "wrapper")))
+#+end_src
+
+**** Exporting behavior of special blocks
+***** General behaviors
+#+begin_src emacs-lisp
+(use-package! org-special-block-extras
+  :after org
+  :hook (org-mode . org-special-block-extras-mode)
+  :config
+  (setq org-special-block-add-html-extra nil))
+#+end_src
+
+***** Theorems, proof, definitions
+#+begin_src emacs-lisp
+(after! org-special-block-extras
+  (org-defblock theorem
+   (name "")
+   (format (pcase backend
+             (`latex "\\begin{theorem}[%s]\n%s\n\\end{theorem}")
+             (_  "{{< notice info \"Theorem: %s\" >}}\n%s\n{{< /notice >}}"))
+           name contents))
+  (org-defblock definition
+   (name "")
+   (format (pcase backend
+             (`latex "\\begin{definition}[%s]\n%s\n\\end{definition}")
+             (_  "{{< notice info \"Definition: %s\" >}}\n%s\n{{< /notice >}}"))
+           name contents))
+  )
+#+end_src
+***** Simpler =details= blocks
+
+#+begin_src emacs-lisp
+(after! org-special-block-extras
+  (org-defblock detail-summary
+   (title "")
+   (format (pcase backend
+             (_ "<details>\n<summary>%s</summary>%s </details>"))
+           title contents)))
+#+end_src
+***** Notices
+
+#+begin_src emacs-lisp
+(after! org-special-block-extras
+  (org-defblock warning
+   (frame-title "Warning")
+   (format
+    (pcase backend
+      (`latex "\\begin{mdframed}[
+frametitlebackgroundcolor=DarkRed!15, backgroundcolor=DarkRed!5,
+hidealllines=true, innertopmargin=\\topskip, roundcorner=5pt,
+frametitlefont=\\sffamily\\color{DarkRed!60!black}, frametitle=%s]
+                %s
+                \\end{mdframed}")
+      (_  "{{< notice warning \"%s\" >}}\n%s\n{{< /notice >}}"))
+    frame-title contents))
+
+
+  (org-defblock info
+   (frame-title "Info")
+   (format
+    (pcase backend
+      (`latex "\\begin{mdframed}[
+frametitlebackgroundcolor=Teal!15, backgroundcolor=Teal!5,
+hidealllines=true, innertopmargin=\\topskip, roundcorner=5pt,
+frametitlefont=\\sffamily\\color{Teal!60!black}, frametitle=%s]
+                %s
+        \\end{mdframed}")
+      (_  "{{< notice info \"%s\" >}}\n%s\n{{< /notice >}}"))
+    frame-title contents))
+
+
+  (org-defblock tips
+   (frame-title "Tips")
+   (format
+    (pcase backend
+      (`latex "\\begin{mdframed}[
+frametitlebackgroundcolor=ForestGreen!15, backgroundcolor=ForestGreen!5,
+hidealllines=true, innertopmargin=\\topskip, roundcorner=5pt,
+frametitlefont=\\sffamily\\color{ForestGreen!60!black}, frametitle=%s]
+                %s
+                \\end{mdframed}")
+      (_  "{{< notice tip \"%s\" >}}\n%s\n{{< /notice >}}"))
+    frame-title contents))
+  )
+#+end_src
+
+**** Block color overlays
+Since we're are overdoing it, let's make these blocks /slightly colorful/!
+
+#+begin_src emacs-lisp
+(after! org-special-block-extras
+  (defface hp/org-special-blocks-tips-face
+    `((t :background ,(doom-blend (doom-color 'teal) (doom-color 'bg) 0.1) :extend t))
+    "Face for tip blocks")
+  (defface hp/org-special-blocks-info-face
+    `((t :background ,(doom-blend (doom-color 'blue) (doom-color 'bg) 0.1) :extend t))
+    "Face for info blocks")
+  (defface hp/org-special-blocks-warning-face
+    `((t :background ,(doom-blend (doom-color 'orange) (doom-color 'bg) 0.1) :extend t))
+    "Face for warning blocks")
+  (defface hp/org-special-blocks-note-face
+    `((t :background ,(doom-blend (doom-color 'violet) (doom-color 'bg) 0.1) :extend t))
+    "Face for warning blocks")
+  (defface hp/org-special-blocks-question-face
+    `((t :background ,(doom-blend (doom-color 'green) (doom-color 'bg) 0.1) :extend t))
+    "Face for warning blocks")
+  (defface hp/org-special-blocks-error-face
+    `((t :background ,(doom-blend (doom-color 'red) (doom-color 'bg) 0.1) :extend t))
+    "Face for warning blocks")
+
+  (defun hp/org-add-overlay-tips-blocks ()
+    "Apply overlays to #+begin_tips blocks in the current buffer."
+    (save-excursion
+      (goto-char (point-min))
+      (while (re-search-forward "^\\(\\#\\+begin_tips\\)" nil t)
+        (let* ((beg (match-beginning 0))
+               (end (if (re-search-forward "^\\(\\#\\+end_tips\\)" nil t)
+                        (1+ (line-end-position))
+                      (point-max)))
+               (ov (make-overlay beg end)))
+          (overlay-put ov 'face 'hp/org-special-blocks-tips-face)))))
+
+  (defun hp/org-add-overlay-info-blocks ()
+    "Apply overlays to #+begin_info blocks in the current buffer."
+    (save-excursion
+      (goto-char (point-min))
+      (while (re-search-forward "^\\(\\#\\+begin_\\(?:info\\|definition\\|theorem\\)\\)" nil t)
+        (let* ((beg (match-beginning 0))
+               (end (if (re-search-forward "^\\(\\#\\+end_\\(?:info\\|definition\\|theorem\\)\\)" nil t)
+                        (1+ (line-end-position))
+                      (point-max)))
+               (ov (make-overlay beg end)))
+          (overlay-put ov 'face 'hp/org-special-blocks-info-face)))))
+
+  (defun hp/org-add-overlay-warning-blocks ()
+    "Apply overlays to #+begin_warning blocks in the current buffer."
+    (save-excursion
+      (goto-char (point-min))
+      (while (re-search-forward "^\\(\\#\\+begin_warning\\)" nil t)
+        (let* ((beg (match-beginning 0))
+               (end (if (re-search-forward "^\\(\\#\\+end_warning\\)" nil t)
+                        (1+ (line-end-position))
+                      (point-max)))
+               (ov (make-overlay beg end)))
+          (overlay-put ov 'face 'hp/org-special-blocks-warning-face)))))
+
+  (defun hp/org-add-overlay-note-blocks ()
+    "Apply overlays to #+begin_note blocks in the current buffer."
+    (save-excursion
+      (goto-char (point-min))
+      (while (re-search-forward "^\\(\\#\\+begin_note\\)" nil t)
+        (let* ((beg (match-beginning 0))
+               (end (if (re-search-forward "^\\(\\#\\+end_note\\)" nil t)
+                        (1+ (line-end-position))
+                      (point-max)))
+               (ov (make-overlay beg end)))
+          (overlay-put ov 'face 'hp/org-special-blocks-note-face)))))
+
+  (defun hp/org-add-overlay-question-blocks ()
+    "Apply overlays to #+begin_question blocks in the current buffer."
+    (save-excursion
+      (goto-char (point-min))
+      (while (re-search-forward "^\\(\\#\\+begin_question\\)" nil t)
+        (let* ((beg (match-beginning 0))
+               (end (if (re-search-forward "^\\(\\#\\+end_question\\)" nil t)
+                        (1+ (line-end-position))
+                      (point-max)))
+               (ov (make-overlay beg end)))
+          (overlay-put ov 'face 'hp/org-special-blocks-question-face)))))
+
+
+  (add-hook! '(org-mode-hook yas-after-exit-snippet-hook)
+             '(hp/org-add-overlay-tips-blocks
+               hp/org-add-overlay-info-blocks
+               hp/org-add-overlay-warning-blocks
+               hp/org-add-overlay-note-blocks
+               hp/org-add-overlay-question-blocks)))
+#+end_src
+
+*** Org-agenda
+#+begin_src emacs-lisp
+(use-package! org-agenda
+  :config
+  ;; Setting the TODO keywords
+  (setq org-todo-keywords
+        '((sequence
+           "TODO(t)"                    ;What needs to be done
+           "NEXT(n)"                    ;A project without NEXTs is stuck
+           "|"
+           "DONE(d)")
+          (sequence
+           "REPEAT(e)"                    ;Repeating tasks
+           "|"
+           "DONE")
+          (sequence
+           "HOLD(h)"                    ;Task is on hold because of me
+           "PROJ(p)"                    ;Contains sub-tasks
+           "WAIT(w)"                    ;Tasks delegated to others
+           "REVIEW(r)"                  ;Daily notes that need reviews
+           "IDEA(i)"                    ;Daily notes that need reviews
+           "|"
+           "STOP(c)"                    ;Stopped/cancelled
+           "EVENT(m)"                   ;Meetings
+           ))
+        org-todo-keyword-faces
+        '(("[-]"  . +org-todo-active)
+          ("NEXT" . +org-todo-active)
+          ("[?]"  . +org-todo-onhold)
+          ("REVIEW" . +org-todo-onhold)
+          ("HOLD" . +org-todo-cancel)
+          ("PROJ" . +org-todo-project)
+          ("DONE"   . +org-todo-cancel)
+          ("STOP" . +org-todo-cancel)))
+  ;; Appearance
+  (setq org-agenda-span 20
+        org-agenda-prefix-format       " %i %?-2 t%s"
+        org-agenda-todo-keyword-format "%-6s"
+        org-agenda-current-time-string "ᐊ┈┈┈┈┈┈┈ Now"
+        org-agenda-time-grid '((today require-timed remove-match)
+                               (0900 1200 1400 1700 2100)
+                               "      "
+                               "┈┈┈┈┈┈┈┈┈┈┈┈┈")
+        )
+  ;; Clocking
+  (setq org-clock-persist 'history
+        org-columns-default-format "%50ITEM(Task) %10CLOCKSUM %16TIMESTAMP_IA"
+        org-agenda-start-with-log-mode t)
+  (org-clock-persistence-insinuate))
+
+(use-package! org-habit
+  :config
+  (setq org-habit-show-all-today t))
+
+(use-package! org-timer
+  :config
+  (setq org-clock-sound (concat doom-private-dir "OOT_Secret.wav")))
+
+(use-package! org-super-agenda
+  :after org-agenda
+  :config
+  ;; Enable org-super-agenda
+  (org-super-agenda-mode)
+  (setq org-agenda-block-separator ?―)
+  ;; Customise the agenda view
+  (setq org-agenda-custom-commands
+        '(("o" "Overview"
+           ((agenda "")
+            (todo "NEXT"
+                  ((org-super-agenda-groups
+                    '((:auto-map hp/agenda-auto-group-title-olp)))))
+            (todo "TODO|HOLD|NEXT|WAIT"
+                       ((org-agenda-overriding-header
+                         "Every TASKS under the sun")
+                        (org-super-agenda-groups
+                         '((:auto-map hp/agenda-auto-group-title-olp)))))
+            (todo "REVIEW"
+                  ((org-agenda-overriding-header "Study")
+                   (org-super-agenda-groups
+                    '((:auto-map hp/agenda-auto-group-title-olp)))))
+            (tags-todo "writings|blog"
+                  ((org-agenda-overriding-header "Writings")
+                   (org-super-agenda-groups
+                    '((:auto-map hp/agenda-auto-group-title-olp)))))
+            (todo "IDEA"
+                  ((org-agenda-overriding-header "Ideas")
+                   (org-super-agenda-groups
+                    '((:auto-map hp/agenda-auto-group-title-olp)))))
+            ))))
+
+  (defun hp/agenda-auto-group-title-olp (item)
+    (-when-let* ((marker (or (get-text-property 0 'org-marker item)
+                             (get-text-property 0 'org-hd-marker item)))
+                 (buffer (->> marker marker-buffer ))
+                 (title (cadar (org-collect-keywords '("title"))))
+                 (filledtitle (if (> (length title) 70)
+                                  (concat (substring title 0 70)  "...") title))
+                 (tags (org-get-tags))
+                 (olp (org-super-agenda--when-with-marker-buffer
+                        (org-super-agenda--get-marker item)
+                        (s-join " → " (org-get-outline-path)))))
+      (concat (if (not (member "journal" tags))
+                 (concat "「" filledtitle "」" ) "    ") olp)))
+
+  ;; Make evil keymaps works on org-super-agenda headers
+  (after! evil-org-agenda
+    (setq org-super-agenda-header-map (copy-keymap evil-org-agenda-mode-map)))
+  ;; Change header face to make it standout more
+  (custom-set-faces!
+    `(org-todo
+      :weight bold :foreground ,(doom-color 'blue))
+    `(+org-todo-active
+      :weight bold :foreground ,(doom-color 'green))
+    `(org-super-agenda-header
+      :inherit 'variable-pitch
+      :weight bold :foreground ,(doom-color 'cyan))
+    `(org-agenda-structure
+      :inherit 'variable-pitch
+      :weight bold :foreground ,(doom-color 'blue))))
+#+end_src
+
+*** Org-capture
+#+begin_src emacs-lisp
+(use-package! org-capture
+  :config
+  ;;CAPTURE TEMPLATES
+  ;;Create IDs on certain capture
+  (defun hp/org-capture-maybe-create-id ()
+    (when (org-capture-get :create-id)
+      (org-id-get-create)))
+  (add-hook 'org-capture-mode-hook #'hp/org-capture-maybe-create-id)
+  ;;Auxiliary functions
+  (defun hp/capture-ox-hugo-post (lang)
+    (setq hp/ox-hugo-post--title (read-from-minibuffer "Post Title: ")
+          hp/ox-hugo-post--fname (org-hugo-slug hp/ox-hugo-post--title)
+          hp/ox-hugo-post--fdate (format-time-string "%Y-%m-%d"))
+    (expand-file-name (format "%s_%s.%s.org" hp/ox-hugo-post--fdate hp/ox-hugo-post--fname lang)
+                      (concat dropbox-directory "/Notes/Org-roam/writings/")))
+  ;; Capture templates
+  (setq org-capture-templates
+        `(("i" "Inbox" entry (file ,(concat org-directory "/Agenda/inbox.org"))
+           "* TODO %?\n  %i\n")
+          ("m" "Meeting" entry (file ,(concat org-directory "/Agenda/inbox.org"))
+           "* MEETING with %? :meeting:\n%t" :clock-in t :clock-resume t)
+          ;; Capture template for new blog posts
+          ("b" "New blog post")
+          ("be" "English" plain (file (lambda () (hp/capture-ox-hugo-post "en")))
+           ,(string-join
+             '("#+title: %(eval hp/ox-hugo-post--title)"
+               "#+subtitle:"
+               "#+author: %n"
+               "#+filetags: blog"
+               "#+date: %(eval hp/ox-hugo-post--fdate)"
+               "#+hugo_base_dir: ~/Dropbox/Blogs/hieutkt/"
+               "#+hugo_section: ./posts/"
+               "#+hugo_tags: %?"
+               "#+hugo_url: ./%(eval hp/ox-hugo-post--fname)"
+               "#+hugo_slug: %(eval hp/ox-hugo-post--fname)"
+               "#+hugo_custom_front_matter:"
+               "#+hugo_draft: false"
+               "#+startup: content"
+               "#+options: toc:2 num:t")
+             "\n")
+           :create-id t
+           :immediate-finish t
+           :jump-to-captured t)
+          ("bv" "Vietnamese" plain (file (lambda () (hp/capture-ox-hugo-post "vi")))
+           ,(string-join
+             '("#+title: %(eval hp/ox-hugo-post--title)"
+               "#+subtitle:"
+               "#+author: %n"
+               "#+filetags: blog"
+               "#+date: %(eval hp/ox-hugo-post--fdate)"
+               "#+hugo_base_dir: ~/Dropbox/Blogs/hieutkt/"
+               "#+hugo_section: ./posts/"
+               "#+hugo_tags: %?"
+               "#+hugo_url: ./%(eval hp/ox-hugo-post--fname)"
+               "#+hugo_slug: %(eval hp/ox-hugo-post--fname)"
+               "#+hugo_custom_front_matter:"
+               "#+hugo_draft: false"
+               "#+startup: content"
+               "#+options: toc:2 num:t")
+             "\n")
+           :create-id t
+           :immediate-finish t
+           :jump-to-captured t))))
+#+end_src
+
+*** Org-babel
+Org-babel might be nice, but editing inside an Org-buffer means that you have to give up all the nice functionalities of the individual language's major more.
+Luckily, we have  =org-edit-special= (bound to ~SPC m '~ in Doom Emacs).
+
+#+begin_src emacs-lisp
+(setq org-src-window-setup 'current-window)
+#+end_src
+
+Now, to set this up for different languages:
+
+#+begin_src emacs-lisp
+(use-package! ob-julia
+  :commands org-babel-execute:julia)
+#+end_src
+
+*** Org-cite
+#+begin_src emacs-lisp
+(use-package! oc
+  :config
+  (setq org-cite-csl-styles-dir (concat dropbox-directory "Documents/Zotero/styles/")
+        org-cite-export-processors '((latex . (biblatex "ext-authoryear"))
+                                     (t     . (csl      "chicago-author-date.csl")))))
+#+end_src
+
+*** Org-roam
+**** Fundamental settings
+***** Customizing main interface
+#+begin_src emacs-lisp
+(use-package! org-roam
+  :after org
+  :init
+  (setq org-roam-directory (concat org-directory "/Org-roam/")
+        org-roam-completion-everywhere nil
+        ;;Functions tags are special types of tags which tells what the node are for
+        ;;In the future, this should probably be replaced by categories
+        hp/org-roam-function-tags '("compilation" "argument" "journal" "concept" "tool" "data" "bio" "literature" "event" "website"))
+  :config
+  ;; Org-roam interface
+  (cl-defmethod org-roam-node-hierarchy ((node org-roam-node))
+    "Return the node's TITLE, as well as it's HIERACHY."
+    (let* ((title (org-roam-node-title node))
+           (olp (mapcar (lambda (s) (if (> (length s) 10) (concat (substring s 0 10)  "...") s)) (org-roam-node-olp node)))
+           (level (org-roam-node-level node))
+           (filetitle (org-roam-get-keyword "TITLE" (org-roam-node-file node)))
+           (filetitle-or-name (if filetitle filetitle (file-name-nondirectory (org-roam-node-file node))))
+           (shortentitle (if (> (length filetitle-or-name) 20) (concat (substring filetitle-or-name 0 20)  "...") filetitle-or-name))
+           (separator (concat " " (all-the-icons-material "chevron_right") " ")))
+      (cond
+       ((= level 1) (concat (propertize (format "=level:%d=" level) 'display (all-the-icons-material "insert_drive_file" :face 'all-the-icons-dyellow))
+                            (propertize shortentitle 'face 'org-roam-olp) separator title))
+       ((= level 2) (concat (propertize (format "=level:%d=" level) 'display (all-the-icons-material "insert_drive_file" :face 'all-the-icons-dsilver))
+                            (propertize (concat shortentitle separator (string-join olp separator)) 'face 'org-roam-olp) separator title))
+       ((> level 2) (concat (propertize (format "=level:%d=" level) 'display (all-the-icons-material "insert_drive_file" :face 'org-roam-olp))
+                            (propertize (concat shortentitle separator (string-join olp separator)) 'face 'org-roam-olp) separator title))
+       (t (concat (propertize (format "=level:%d=" level) 'display (all-the-icons-material "insert_drive_file" :face 'all-the-icons-yellow))
+                  (if filetitle title (propertize filetitle-or-name 'face 'all-the-icons-dyellow)))))))
+
+  (cl-defmethod org-roam-node-functiontag ((node org-roam-node))
+    "Return the FUNCTION TAG for each node. These tags are intended to be unique to each file, and represent the note's function.
+        journal data literature"
+    (let* ((tags (seq-filter (lambda (tag) (not (string= tag "ATTACH"))) (org-roam-node-tags node))))
+      (concat
+       ;; Argument or compilation
+       (cond
+        ((member "argument" tags)
+         (propertize "=f:argument=" 'display (all-the-icons-material "forum" :face 'all-the-icons-dred)))
+        ((member "compilation" tags)
+         (propertize "=f:compilation=" 'display (all-the-icons-material "collections" :face 'all-the-icons-dyellow)))
+        (t (propertize "=f:empty=" 'display (all-the-icons-material "remove" :face 'org-hide))))
+       ;; concept, bio, data or event
+       (cond
+        ((member "concept" tags)
+         (propertize "=f:concept=" 'display (all-the-icons-material "blur_on" :face 'all-the-icons-dblue)))
+        ((member "tool" tags)
+         (propertize "=f:tool=" 'display (all-the-icons-material "build" :face 'all-the-icons-dblue)))
+        ((member "bio" tags)
+         (propertize "=f:bio=" 'display (all-the-icons-material "people" :face 'all-the-icons-dblue)))
+        ((member "event" tags)
+         (propertize "=f:event=" 'display (all-the-icons-material "event" :face 'all-the-icons-dblue)))
+        ((member "data" tags)
+         (propertize "=f:data=" 'display (all-the-icons-material "data_usage" :face 'all-the-icons-dblue)))
+        (t (propertize "=f:nothing=" 'display (all-the-icons-material "format_shapes" :face 'org-hide))))
+       ;; literature
+       (cond
+        ((member "literature" tags)
+         (propertize "=f:literature=" 'display (all-the-icons-material "book" :face 'all-the-icons-dcyan)))
+        ((member "website" tags)
+         (propertize "=f:website=" 'display (all-the-icons-material "move_to_inbox" :face 'all-the-icons-dsilver)))
+        (t (propertize "=f:nothing=" 'display (all-the-icons-material "book" :face 'org-hide))))
+       ;; journal
+       )))
+
+  (cl-defmethod org-roam-node-othertags ((node org-roam-node))
+    "Return the OTHER TAGS of each notes."
+    (let* ((tags (seq-filter (lambda (tag) (not (string= tag "ATTACH"))) (org-roam-node-tags node)))
+           (specialtags hp/org-roam-function-tags)
+           (othertags (seq-difference tags specialtags 'string=)))
+       (propertize
+        (string-join
+         (append '(" ") othertags)
+         (propertize "#" 'display (all-the-icons-material "label" :face 'all-the-icons-dgreen)))
+        'face 'all-the-icons-dgreen)))
+
+  (cl-defmethod org-roam-node-backlinkscount ((node org-roam-node))
+    (let* ((count (caar (org-roam-db-query
+                         [:select (funcall count source)
+                          :from links
+                          :where (= dest $s1)
+                          :and (= type "id")]
+                         (org-roam-node-id node)))))
+      (if (> count 0)
+          (concat (propertize "=has:backlinks=" 'display (all-the-icons-material "link" :face 'all-the-icons-blue)) (format "%d" count))
+        (concat (propertize "=not-backlinks=" 'display (all-the-icons-material "link" :face 'org-hide))  " "))))
+
+  (cl-defmethod org-roam-node-directories ((node org-roam-node))
+    (if-let ((dirs (file-name-directory (file-relative-name (org-roam-node-file node) org-roam-directory))))
+        (concat
+         (if (string= "journal/" dirs)
+             (all-the-icons-material "edit" :face 'all-the-icons-dsilver)
+           (all-the-icons-material "folder" :face 'all-the-icons-dsilver))
+         (propertize (string-join (f-split dirs) "/") 'face 'all-the-icons-dsilver) " ")
+      ""))
+
+  (defun +marginalia--time-colorful (time)
+    (let* ((seconds (float-time (time-subtract (current-time) time)))
+           (color (doom-blend
+                   (face-attribute 'marginalia-on :foreground nil t)
+                   (face-attribute 'marginalia-off :foreground nil t)
+                   (/ 1.0 (log (+ 3 (/ (+ 1 seconds) 345600.0)))))))
+      ;; 1 - log(3 + 1/(days + 1)) % grey
+      (propertize (marginalia--time time) 'face (list :foreground color :slant 'italic))))
+
+  (setq org-roam-node-display-template
+        (concat  "${backlinkscount:16} ${functiontag} ${directories}${hierarchy}${othertags} ")
+        org-roam-node-annotation-function
+        (lambda (node) (+marginalia--time-colorful (org-roam-node-file-mtime node))))
+  )
+#+end_src
+
+***** Capture templates
+#+begin_src emacs-lisp
+(use-package! org-roam-capture
+  :config
+  (setq org-roam-capture-templates
+        `(("d" "default" plain "%?"
+           :target
+           (file+head "${slug}_%<%Y-%m-%d--%H-%M-%S>.org"
+                      "#+title: ${title}\n#+created: %U\n#+filetags: %(completing-read \"Function tags: \" hp/org-roam-function-tags)\n#+startup: overview")
+           :unnarrowed t))))
+
+(use-package! org-roam-dailies
+  :config
+  (setq org-roam-dailies-directory "journal/"
+        org-roam-dailies-capture-templates
+        '(("d" "daily" entry "* %?"
+           :target
+           (file+head "%<%Y-%m-%d>.org"
+                      "#+title: %<%Y-%m-%d %a>\n#+filetags: journal\n#+startup: overview\n#+created: %U\n\n")
+           :immediate-finish t)))
+  (map! :leader
+        :prefix "n"
+        (:prefix ("j" . "journal")
+         :desc "Arbitrary date" "d" #'org-roam-dailies-goto-date
+         :desc "Today"          "j" #'org-roam-dailies-goto-today
+         :desc "Tomorrow"       "m" #'org-roam-dailies-goto-tomorrow
+         :desc "Yesterday"      "y" #'org-roam-dailies-goto-yesterday)))
+
+(use-package! websocket
+  :after org-roam)
+
+(use-package! org-roam-ui
+  :after org-roam
+  :commands (org-roam-ui-mode))
+#+end_src
+
+***** Workspace creation
+This is to automate creating a workspace for Org-roam
+
+#+begin_src emacs-lisp
+(after! (org-roam)
+  (defadvice! yeet/org-roam-in-own-workspace-a (&rest _)
+  "Open all roam buffers in there own workspace."
+  :before #'org-roam-node-find
+  :before #'org-roam-node-random
+  :before #'org-roam-buffer-display-dedicated
+  :before #'org-roam-buffer-toggle
+  :before #'org-roam-dailies-goto-today
+  (when (modulep! :ui workspaces)
+    (+workspace-switch "Org-roam" t))))
+#+end_src
+
+***** Org-roam-protocol
+
+#+begin_src emacs-lisp
+(use-package! org-roam-protocol
+  :after (org-roam org-roam-dailies org-protocol)
+  :config
+  (add-to-list
+   'org-roam-capture-ref-templates
+   `(;; Browser bookletmark template:
+     ;; javascript:location.href =
+     ;; 'org-protocol://roam-ref?template=w&ref='
+     ;; + encodeURIComponent(location.href)
+     ;; + '&title='
+     ;; + encodeURIComponent(document.getElementsByTagName("h1")[0].innerText)
+     ;; + '&hostname='
+     ;; + encodeURIComponent(location.hostname)
+     ("w" "webref" entry "* ${title} ([[${ref}][${hostname}]])\n%?"
+      :target
+      (file+head
+       ,(concat org-roam-dailies-directory "%<%Y-%m>.org")
+       ,(string-join
+         '(":properties:"
+           ":roam_refs: %^{Key}"
+           ":end:"
+           "#+title: %<%Y-%m>"
+           "#+filetags: journal"
+           "#+startup: overview"
+           "#+created: %U"
+           "") "\n"))
+      :unnarrowed t))))
+#+end_src
+**** Org-roam and Org-agenda itegration
+Integrating Org-roam and Org-agenda might be complicated, since Org-roam pushes us towards making many =.org= files, and Org-agenda works best with a few, big =.org= files.
+
+The solution proposed in [[https://d12frosted.io/posts/2021-01-16-task-management-with-roam-vol5.html][this blog post]] is to dynamically update the variable =org-agenda-files=, so that Org-agenda only check for Org-roam files that contains certain tags.
+In my case, the tags that are marked for inspection are =tasked= and =schedule=.
+Org-roam files are automatically marked with =tasked= as long as it has any =TODO= heading.
+Files with =schedule= tags are designated manually.
+
+#+begin_src emacs-lisp
+(after! (org-agenda org-roam)
+  (defun vulpea-task-p ()
+    "Return non-nil if current buffer has any todo entry.
+
+TODO entries marked as done are ignored, meaning the this
+function returns nil if current buffer contains only completed
+tasks."
+    (seq-find                                 ; (3)
+     (lambda (type)
+       (eq type 'todo))
+     (org-element-map                         ; (2)
+         (org-element-parse-buffer 'headline) ; (1)
+         'headline
+       (lambda (h)
+         (org-element-property :todo-type h)))))
+
+  (defun vulpea-task-update-tag ()
+    "Update task tag in the current buffer."
+    (when (and (not (active-minibuffer-window))
+               (vulpea-buffer-p))
+      (save-excursion
+        (goto-char (point-min))
+        (let* ((tags (vulpea-buffer-tags-get))
+               (original-tags tags))
+          (if (vulpea-task-p)
+              (setq tags (cons "task" tags))
+            (setq tags (remove "task" tags)))
+
+          ;; cleanup duplicates
+          (setq tags (seq-uniq tags))
+
+          ;; update tags if changed
+          (when (or (seq-difference tags original-tags)
+                    (seq-difference original-tags tags))
+            (apply #'vulpea-buffer-tags-set tags))))))
+
+  (defun vulpea-buffer-p ()
+    "Return non-nil if the currently visited buffer is a note."
+    (and buffer-file-name
+         (string-prefix-p
+          (expand-file-name (file-name-as-directory org-roam-directory))
+          (file-name-directory buffer-file-name))))
+
+  (defun vulpea-task-files ()
+    "Return a list of note files containing 'task' tag." ;
+    (seq-uniq
+     (seq-map
+      #'car
+      (org-roam-db-query
+       [:select [nodes:file]
+        :from tags
+        :left-join nodes
+        :on (= tags:node-id nodes:id)
+        :where (or (like tag (quote "%\"task\"%"))
+                   (like tag (quote "%\"schedule\"%")))]))))
+
+  (defun vulpea-agenda-files-update (&rest _)
+    "Update the value of `org-agenda-files'."
+    (setq org-agenda-files (vulpea-task-files)))
+
+  (add-hook 'find-file-hook #'vulpea-task-update-tag)
+  (add-hook 'before-save-hook #'vulpea-task-update-tag)
+
+  (advice-add 'org-agenda :before #'vulpea-agenda-files-update)
+  (advice-add 'org-todo-list :before #'vulpea-agenda-files-update)
+
+  ;; functions borrowed from `vulpea' library
+  ;; https://github.com/d12frosted/vulpea/blob/6a735c34f1f64e1f70da77989e9ce8da7864e5ff/vulpea-buffer.el
+
+  (defun vulpea-buffer-tags-get ()
+    "Return filetags value in current buffer."
+    (vulpea-buffer-prop-get-list "filetags" "[ :]"))
+
+  (defun vulpea-buffer-tags-set (&rest tags)
+    "Set TAGS in current buffer.
+
+If filetags value is already set, replace it."
+    (if tags
+        (vulpea-buffer-prop-set
+         "filetags" (concat ":" (string-join tags ":") ":"))
+      (vulpea-buffer-prop-remove "filetags")))
+
+  (defun vulpea-buffer-tags-add (tag)
+    "Add a TAG to filetags in current buffer."
+    (let* ((tags (vulpea-buffer-tags-get))
+           (tags (append tags (list tag))))
+      (apply #'vulpea-buffer-tags-set tags)))
+
+  (defun vulpea-buffer-tags-remove (tag)
+    "Remove a TAG from filetags in current buffer."
+    (let* ((tags (vulpea-buffer-tags-get))
+           (tags (delete tag tags)))
+      (apply #'vulpea-buffer-tags-set tags)))
+
+  (defun vulpea-buffer-prop-set (name value)
+    "Set a file property called NAME to VALUE in buffer file.
+If the property is already set, replace its value."
+    (setq name (downcase name))
+    (org-with-point-at 1
+      (let ((case-fold-search t))
+        (if (re-search-forward (concat "^#\\+" name ":\\(.*\\)")
+                               (point-max) t)
+            (replace-match (concat "#+" name ": " value) 'fixedcase)
+          (while (and (not (eobp))
+                      (looking-at "^[#:]"))
+            (if (save-excursion (end-of-line) (eobp))
+                (progn
+                  (end-of-line)
+                  (insert "\n"))
+              (forward-line)
+              (beginning-of-line)))
+          (insert "#+" name ": " value "\n")))))
+
+  (defun vulpea-buffer-prop-set-list (name values &optional separators)
+    "Set a file property called NAME to VALUES in current buffer.
+VALUES are quoted and combined into single string using
+`combine-and-quote-strings'.
+If SEPARATORS is non-nil, it should be a regular expression
+matching text that separates, but is not part of, the substrings.
+If nil it defaults to `split-string-default-separators', normally
+\"[ \f\t\n\r\v]+\", and OMIT-NULLS is forced to t.
+If the property is already set, replace its value."
+    (vulpea-buffer-prop-set
+     name (combine-and-quote-strings values separators)))
+
+  (defun vulpea-buffer-prop-get (name)
+    "Get a buffer property called NAME as a string."
+    (org-with-point-at 1
+      (when (re-search-forward (concat "^#\\+" name ": \\(.*\\)")
+                               (point-max) t)
+        (buffer-substring-no-properties
+         (match-beginning 1)
+         (match-end 1)))))
+
+  (defun vulpea-buffer-prop-get-list (name &optional separators)
+    "Get a buffer property NAME as a list using SEPARATORS.
+If SEPARATORS is non-nil, it should be a regular expression
+matching text that separates, but is not part of, the substrings.
+If nil it defaults to `split-string-default-separators', normally
+\"[ \f\t\n\r\v]+\", and OMIT-NULLS is forced to t."
+    (let ((value (vulpea-buffer-prop-get name)))
+      (when (and value (not (string-empty-p value)))
+        (split-string-and-unquote value separators))))
+
+  (defun vulpea-buffer-prop-remove (name)
+    "Remove a buffer property called NAME."
+    (org-with-point-at 1
+      (when (re-search-forward (concat "\\(^#\\+" name ":.*\n?\\)")
+                               (point-max) t)
+        (replace-match ""))))
+  )
+#+end_src
+
+**** Org-roam and citar integration
+Citar integrates with Org-roam via =citar-org-roam.el=.
+This makes the comand =citar-open-notes=  (bind to ~SPC n b~) use Org-roam's template system.
+The bibliography notes created this way will be set up with proper =ID= and =ROAM_REFS= properties.
+The integration also comes with a nice inteface when following an org citation
+
+#+caption: Following a citation in Org-mode, with Citar and Org-roam integraion
+[[file:pics/citar-org-roam-follow.png]]
+
+Here's the relevent part:
+
+#+begin_src emacs-lisp
+(use-package citar-org-roam
+  :after citar org-roam
+  :no-require
+  :config
+  (setq citar-org-roam-subdir "literature"
+        citar-org-roam-note-title-template
+        (string-join
+         '("${author editor} (${year issued date}) ${title}"
+           "#+filetags: literature"
+           "#+startup: overview"
+           "#+options: toc:2 num:t"
+           "#+hugo_base_dir: ~/Dropbox/Blogs/hieutkt/"
+           "#+hugo_section: ./notes"
+           "#+hugo_custom_front_matter: :exclude true :math true"
+           "#+hugo_custom_front_matter: :bibinfo '((doi .\"${doi}\") (isbn . \"${isbn}\") (url . \"${url}\") (year . \"${year}\") (month . \"${month}\") (date . \"${date}\") (author . \"${author}\") (journal . \"${journal}\"))"
+           "#+hugo_series: \"Reading notes\""
+           "#+hugo_tags:"
+           ""
+           "* What?"
+           "* Why?"
+           "* How?"
+           "* And?"
+           ) "\n"))
+  (citar-org-roam-mode))
+#+end_src
+**** Backlinks count display
+
+#+begin_src emacs-lisp
+(defface hp/org-roam-count-overlay-face
+  '((t :inherit org-list-dt :height 0.8))
+  "Face for Org Roam count overlay.")
+
+(defun hp/org-roam--count-overlay-make (pos count)
+  (let* ((overlay-value (propertize
+                         (concat "·" (format "%d" count) " ")
+                         'face 'hp/org-roam-count-overlay-face 'display '(raise 0.2)))
+         (ov (make-overlay pos pos (current-buffer) nil t)))
+    (overlay-put ov 'roam-backlinks-count count)
+    (overlay-put ov 'priority 1)
+    (overlay-put ov 'after-string overlay-value)))
+
+(defun hp/org-roam--count-overlay-remove-all ()
+  (dolist (ov (overlays-in (point-min) (point-max)))
+    (when (overlay-get ov 'roam-backlinks-count)
+      (delete-overlay ov))))
+
+(defun hp/org-roam--count-overlay-make-all ()
+  (hp/org-roam--count-overlay-remove-all)
+  (org-element-map (org-element-parse-buffer) 'link
+    (lambda (elem)
+      (when (string-equal (org-element-property :type elem) "id")
+        (let* ((id (org-element-property :path elem))
+               (count (caar
+                       (org-roam-db-query
+                        [:select (funcall count source)
+                         :from links
+                         :where (= dest $s1)
+                         :and (= type "id")]
+                        id))))
+          (when (< 0 count)
+            (hp/org-roam--count-overlay-make
+             (org-element-property :end elem)
+             count)))))))
+
+(define-minor-mode hp/org-roam-count-overlay-mode
+  "Display backlink count for org-roam links."
+  :after-hook
+  (if hp/org-roam-count-overlay-mode
+      (progn
+        (hp/org-roam--count-overlay-make-all)
+        (add-hook 'after-save-hook #'hp/org-roam--count-overlay-make-all nil t))
+    (hp/org-roam--count-overlay-remove-all)
+    (remove-hook 'after-save-hook #'hp/org-roam--count-overlay-remove-all t)))
+
+(add-hook 'org-mode-hook #'hp/org-roam-count-overlay-mode)
+#+end_src
+
+*** Miscellaneous
+Gonna clean this up later
+
+#+begin_src emacs-lisp
+(use-package! org-gcal
+  :commands org-gcal-fetch
+  :config
+  (load-file (concat dropbox-directory "/Auths/org-gcal-settings.el.gpg")))
+
+(use-package! org-download
+  :config
+  (add-hook 'dired-mode-hook 'org-download-enable)
+  ;; Change how inline images are displayed
+  (setq org-download-display-inline-images nil))
+
+(use-package! org-transclusion
+  :after org
+  :config
+  (setq org-transclusion-include-first-section t)
+  (add-to-list 'org-transclusion-exclude-elements 'keyword)
+  (map! :map global-map "<f9>" #'org-transclusion-mode))
+
+(use-package! clip2org)
+#+end_src
+
+** R
+First programming language that I learnt.
+Most of the time, the interation provided by ESS-mode is excellent and I can be productive with it.
+Syntax-highlighting in =ess-r-mode= is not so spectacular, however.
+Hopefully this will get better once =tree-sitter= is better integrated into Emacs.
+
+#+begin_src emacs-lisp
+(use-package! ess
+  :config
+  (set-popup-rules!
+    '(("^\\*R:*\\*$" :side right :size 0.5 :ttl nil)))
+  (setq ess-R-font-lock-keywords
+        '((ess-R-fl-keyword:keywords . t)
+          (ess-R-fl-keyword:constants . t)
+          (ess-R-fl-keyword:modifiers . t)
+          (ess-R-fl-keyword:fun-defs . t)
+          (ess-R-fl-keyword:assign-ops . t)
+          (ess-R-fl-keyword:%op% . t)
+          (ess-fl-keyword:fun-calls . t)
+          (ess-fl-keyword:numbers . t)
+          (ess-fl-keyword:operators . t)
+          (ess-fl-keyword:delimiters . t)
+          (ess-fl-keyword:= . t)
+          (ess-R-fl-keyword:F&T . t)))
+  (map! (:map (ess-mode-map inferior-ess-mode-map)
+         :g ";" #'ess-insert-assign)))
+#+end_src
+
+** Stata
+Even though I try to use Stata as little as I can, sometimes it's unavoidable, especially in collaboration with applied economists.
+I usually use the [[https://github.com/kylebarron/stata_kernel][Jupyter Stata kernel]] in these situations and it's decent, but sometimes I really miss the excellent editing environment that I have in Emacs.
+In preparation, here's the little configurations if I ever decide to use Stata in Emacs:
+
+#+begin_src emacs-lisp
+(use-package! ess-stata-mode
+  :after ess
+  :config
+  (setq inferior-STA-start-args ""
+        inferior-STA-program (executable-find "stata")
+        inferior-STA-program-name (executable-find "stata"))
+  (add-to-list 'org-src-lang-modes '("jupyter-stata" . stata)))
+#+end_src
+
+** Python
+Python is widely used and thus is extensively supported everywhere.
+While I prefer Julia for numerical computing and R for econometrics and data visualization, Python is good in pretty much everything else.
+I am happy with most the defaults given in Doom Emacs, so my custom configuration in this section is only minimal.
+
+#+begin_src emacs-lisp
+(use-package! python
+  :config
+  (set-popup-rules!
+    '(("^\\*Python:*\\*$" :side right :size 0.5 :ttl nil))))
+#+end_src
+
+** Julia
+Economists are picking up on this language.
+
+#+begin_src emacs-lisp
+(use-package! julia-repl
+  :config
+  ;; Use vterm instead of the defautl term
+  (when (modulep! :term vterm)
+    (julia-repl-set-terminal-backend 'vterm)
+    (map! :map vterm-mode-map :i "C-c C-z" nil))
+  (setq lsp-julia-package-dir nil)
+  ;; Make popup position similar to `ess'
+  (set-popup-rules!
+    '(("^\\*julia.*\\*$" :side right :size 0.5 :ttl nil))))
+
+;; lsp-mode seems to serve an invalid response to the Julia server.
+;; The pseudo-fix is rather simple at least.
+(after! julia-mode
+  (add-hook! 'julia-mode-hook
+    (setq-local lsp-enable-folding t
+                lsp-folding-range-limit 100)))
+#+end_src
+
+#+begin_src emacs-lisp
+(use-package! ob-julia
+  :config
+  (setq org-babel-julia-backend 'julia-snail))
+#+end_src
+** LaTeX
+A good bulk of any good research should go into writing, and once your writing topic gets slightly technical, you need the goodness of LaTeX.
+These days I don't really write =.tex= files directly in Emacs and from what I hear, the built-in [[https://www.gnu.org/software/auctex/][AUCTeX]] is awesome for that.
+Most of my writings in Emacs is done in Org-mode.
+However, Org-mode inherits quite a few things from LaTeX-mode, so some configuration is needed here, most of which relates to syntax-highlighting of LaTeX fragments and snippets for fast insertion of math equations.
+*** Better defaults
+#+begin_src emacs-lisp
+(after! tex
+  (setq-default TeX-master nil
+                TeX-view-program-list '(("Evince" "evince --page-index=%(outpage) %o"))
+                TeX-view-program-selection '((output-pdf "Evince"))))
+#+end_src
+*** Better looks
+Subscript and superscript fontification looks janky to me, so let's turn them off.
+
+#+begin_src emacs-lisp
+(setq font-latex-fontify-script nil)
+#+end_src
+
+*** CDLatex-mode and LaTeX-auto-activating-snippets
+=cdlatex-mode= is useful when writing math equations.
+It support Org-mode out of the box.
+
+#+begin_src emacs-lisp
+(after! cdlatex
+  (setq cdlatex-math-modify-alist
+        '((?d "\\mathbb" nil t nil nil)
+          (?D "\\mathbbm" nil t nil nil))
+        cdlatex-env-alist
+        '(("cases" "\\begin{cases} ? \\end{cases}" nil)
+          ("matrix" "\\begin{matrix} ? \\end{matrix}" nil)
+          ("pmatrix (parenthesis)" "\\begin{pmatrix} ? \\end{pmatrix}" nil)
+          ("bmatrix [braces]" "\\begin{bmatrix} ? \\end{bmatrix}" nil))))
+#+end_src
+
+=laas-mode= automates /even more/.
+The list of snippets enabled by this package is enormous, best to check their README if you have any doubt.
+
+#+begin_src emacs-lisp
+(use-package! laas
+  :hook (org-mode . laas-mode)
+  :config
+  (setq laas-enable-auto-space nil)
+  ;; ;; For some reason (texmathp) returns t everywhere in org buffer
+  ;; ;; which is not every useful, so here's a fix
+  ;; (add-hook 'org-cdlatex-mode-hook
+  ;;           (lambda () (advice-remove 'texmathp 'org--math-always-on)))
+  ;;More snippets
+  (aas-set-snippets 'laas-mode
+    ;; Condition: Not in math environment and not in a middle of a word
+    :cond (lambda nil (and (not (laas-org-mathp)) (memq (char-before) '(10 40 32))))
+    "mk"     (lambda () (interactive) (yas-expand-snippet "\\\\( $0 \\\\)"))
+    "mmk"    (lambda () (interactive) (yas-expand-snippet "\\[ $0 \\]"))
+    "citet"  (lambda () (interactive) (yas-expand-snippet "\[cite/t:@$0\]"))
+    ";>"     "\\( \\rightarrow \\)"
+    ;; Condition: Math environment
+    :cond #'laas-org-mathp
+    "qed"    "\\blacksquare"
+    ",,"     "\\,,"
+    ".,"     "\\,."
+    ";0"     "\\emptyset"
+    ";."     "\\cdot"
+    ",."     nil                     ;disable the annoying \vec{} modifier
+    "||"     nil
+    "lr||"   (lambda () (interactive) (yas-expand-snippet "\\lVert $0 \\rVert"))
+    "pdv"    (lambda () (interactive) (yas-expand-snippet "\\frac{\\partial $1}{\\partial $2}"))
+    ;; Condition: Math environment, modify last object on the left
+    :cond #'laas-object-on-left-condition
+    "hat"    (lambda () (interactive) (laas-wrap-previous-object "hat"))
+    "ubar"   (lambda () (interactive) (laas-wrap-previous-object "underline"))
+    "bar"    (lambda () (interactive) (laas-wrap-previous-object "bar"))
+    "dot"    (lambda () (interactive) (laas-wrap-previous-object "dot"))
+    "tilde"  (lambda () (interactive) (laas-wrap-previous-object "tilde"))
+    "TXT"    (lambda () (interactive) (laas-wrap-previous-object "text"))
+    "ON"     (lambda () (interactive) (laas-wrap-previous-object "operatorname"))
+    "BON"    (lambda () (interactive) (laas-wrap-previous-object
+                                  '("\\operatorname{\\mathbf{" . "}}")))
+    "tt"     "_{t}"
+    "tp1"    "_{t+1}"
+    "tm1"    "_{t-1}"
+    "**"     "^{\\ast}"))
+#+end_src
+** CalC
+*** Basic configs
+In Org-mode, I want to toggle =calc-embedded= by ~SPC m e~, overriding Doom's default keybindings for =org-export-dispatch= (which I normally invoke by ~C-c C-e~):
+
+#+begin_src emacs-lisp
+(map! :map (calc-mode-map org-mode-map latex-mode-map)
+      :after org
+      :localleader
+      :desc "Embedded calc (toggle)" "e" #'calc-embedded)
+#+end_src
+
+*** Experimental packages
+
+#+begin_src emacs-lisp
+(use-package! calctex
+  :commands calctex-mode
+  :init
+  (add-hook 'calc-mode-hook #'calctex-mode)
+  :config
+  (setq calctex-additional-latex-packages "
+\\usepackage[usenames]{xcolor}
+\\usepackage[sfdefault]{AlegreyaSans}
+\\usepackage{newtxsf}
+\\usepackage{soul}
+\\usepackage{adjustbox}
+\\usepackage{amsmath}
+\\usepackage{amssymb}
+\\usepackage{siunitx}
+\\usepackage{cancel}
+\\usepackage{mathtools}
+\\usepackage{mathalpha}
+\\usepackage{xparse}
+\\usepackage{arevmath}")
+  ;; Fix dvichop path error
+  (defadvice! no-messaging-a (orig-fn &rest args)
+    :around #'calctex-default-dispatching-render-process
+    (let ((inhibit-message t) message-log-max)
+      (apply orig-fn args)))
+  ;; Fix hardcoded dvichop path (whyyyyyyy)
+  (let ((vendor-folder (concat (file-truename doom-local-dir)
+                               "straight/"
+                               (format "build-%s" emacs-version)
+                               "/calctex/vendor/")))
+    (setq calctex-dvichop-sty (concat vendor-folder "texd/dvichop")
+          calctex-dvichop-bin (concat vendor-folder "texd/dvichop")))
+  (unless (file-exists-p calctex-dvichop-bin)
+    (message "CalcTeX: Building dvichop binary")
+    (let ((default-directory (file-name-directory calctex-dvichop-bin)))
+      (call-process "make" nil nil nil))))
+#+end_src
+
+#+begin_src emacs-lisp :tangle no
+(use-package! calc-transient
+  :hook (calc-mode . calc-transient-minor-mode))
+#+end_src
+
+** Elfeeds
+
+#+begin_src emacs-lisp
+(use-package! elfeed
+  :commands (elfeed)
+  :custom
+  (rmh-elfeed-org-files (list (concat org-directory "/Feeds/elfeed.org")))
+  (elfeed-db-directory (concat org-directory "/Feeds/elfeed.db/"))
+  (elfeed-goodies/wide-threshold 0.2)
+  :bind ("<f10>" . #'elfeed)
+  :config
+  ;; (defun hp/elfeed-entry-line-draw (entry)
+  ;;   (insert (format "%s" (elfeed-meta--plist entry))))
+  (defun hp/elfeed-entry-line-draw (entry)
+    "Print ENTRY to the buffer."
+    (let* ((date (elfeed-search-format-date (elfeed-entry-date entry)))
+           (title (or (elfeed-meta entry :title) (elfeed-entry-title entry) ""))
+           (title-faces (elfeed-search--faces (elfeed-entry-tags entry)))
+           (feed (elfeed-entry-feed entry))
+           (feed-title
+            (when feed
+              (or (elfeed-meta feed :title) (elfeed-feed-title feed))))
+           (tags (mapcar #'symbol-name (elfeed-entry-tags entry)))
+           (tags-str (concat "[" (mapconcat 'identity tags ",") "]"))
+           (title-width (- (window-width) elfeed-goodies/feed-source-column-width
+                           elfeed-goodies/tag-column-width 4))
+           (title-column (elfeed-format-column
+                          title (elfeed-clamp
+                                 elfeed-search-title-min-width
+                                 title-width
+                                 title-width)
+                          :left))
+           (tag-column (elfeed-format-column
+                        tags-str (elfeed-clamp (length tags-str)
+                                               elfeed-goodies/tag-column-width
+                                               elfeed-goodies/tag-column-width)
+                        :left))
+           (feed-column (elfeed-format-column
+                         feed-title (elfeed-clamp elfeed-goodies/feed-source-column-width
+                                                  elfeed-goodies/feed-source-column-width
+                                                  elfeed-goodies/feed-source-column-width)
+                         :left))
+           (entry-score (elfeed-format-column (number-to-string (elfeed-score-scoring-get-score-from-entry entry)) 6 :left))
+           ;; (entry-authors (concatenate-authors
+           ;;                 (elfeed-meta entry :authors)))
+           ;; (authors-column (elfeed-format-column entry-authors elfeed-goodies/tag-column-width :left))
+           )
+      (if (>= (window-width) (* (frame-width) elfeed-goodies/wide-threshold))
+          (progn
+            (insert (propertize entry-score 'face 'elfeed-search-feed-face) " ")
+            (insert (propertize date 'face 'elfeed-search-date-face) " ")
+            (insert (propertize feed-column 'face 'elfeed-search-feed-face) " ")
+            (insert (propertize tag-column 'face 'elfeed-search-tag-face) " ")
+            ;; (insert (propertize authors-column 'face 'elfeed-search-tag-face) " ")
+            (insert (propertize title 'face title-faces 'kbd-help title))
+            )
+        (insert (propertize title 'face title-faces 'kbd-help title)))))
+
+  (defun concatenate-authors (authors-list)
+    "Given AUTHORS-LIST, list of plists; return string of all authors concatenated."
+    (if (> (length authors-list) 1)
+        (format "%s et al." (plist-get (nth 0 authors-list) :name))
+      (plist-get (nth 0 authors-list) :name)))
+
+  (defun search-header/draw-wide (separator-left separator-right search-filter stats db-time)
+    (let* ((update (format-time-string "%Y-%m-%d %H:%M:%S %z" db-time))
+           (lhs (list
+                 (powerline-raw (-pad-string-to "Score" (- 5 5)) 'powerline-active1 'l)
+                 (funcall separator-left 'powerline-active1 'powerline-active2)
+                 (powerline-raw (-pad-string-to "Date" (- 9 4)) 'powerline-active2 'l)
+                 (funcall separator-left 'powerline-active2 'powerline-active1)
+                 (powerline-raw (-pad-string-to "Feed" (- elfeed-goodies/feed-source-column-width 4)) 'powerline-active1 'l)
+                 (funcall separator-left 'powerline-active1 'powerline-active2)
+                 (powerline-raw (-pad-string-to "Tags" (- elfeed-goodies/tag-column-width 6)) 'powerline-active2 'l)
+                 (funcall separator-left 'powerline-active2 'mode-line)
+                 (powerline-raw "Subject" 'mode-line 'l)))
+           (rhs (search-header/rhs separator-left separator-right search-filter stats update)))
+      (concat (powerline-render lhs)
+              (powerline-fill 'mode-line (powerline-width rhs))
+              (powerline-render rhs))))
+
+  ;; Tag entry as read when open
+  (defadvice! hp/mark-read (&rest _)
+    :before 'elfeed-search-show-entry
+    :before 'elfeed-search-browse-url
+    (let* ((offset (- (line-number-at-pos) elfeed-search--offset))
+           (current-entry (nth offset elfeed-search-entries)))
+      (elfeed-tag-1 current-entry 'read)))
+
+  ;; Faces for diferent kinds of feeds
+  (defface hp/elfeed-blog
+    `((t :foreground ,(doom-color 'blue)))
+    "Marks a Elfeed blog.")
+  (push '(blog hp/elfeed-blog)
+        elfeed-search-face-alist)
+  (push '(read elfeed-search-title-face)
+        elfeed-search-face-alist)
+
+  ;; Variables
+  (setq elfeed-search-print-entry-function 'hp/elfeed-entry-line-draw
+        elfeed-search-filter "@8-weeks-ago -bury "))
+
+#+end_src
+
+Elfeed-score helps with keeping track of the more important entries.
+
+#+begin_src emacs-lisp
+(use-package! elfeed-score
+  :after elfeed
+  :custom
+  (elfeed-score-score-file (concat org-directory "/Feeds/elfeed.score"))
+  :config
+  (map! :map elfeed-search-mode-map
+        :n "=" elfeed-score-map)
+  (elfeed-score-enable))
+#+end_src
+
+Like Org-roam, Elfeed should be opened in it's own workspace:
+
+#+begin_src emacs-lisp
+(after! (elfeed)
+  (defadvice! hp/elfeed-in-own-workspace (&rest _)
+  "Open Elfeeds in its own workspace."
+  :before #'elfeed
+  (when (modulep! :ui workspaces)
+    (+workspace-switch "Elfeeds" t))))
+#+end_src
+** ChatGPT
+
+#+begin_src emacs-lisp
+(use-package! gptel
+  :bind (("<f7>" . #'gptel)
+         ("S-<f7>" . #'gptel-send))
+  :config
+  (setq! gptel-default-mode #'org-mode)
+  (map! :map gptel-mode-map
+        :g "C-c C-g" #'gptel-send))
+#+end_src
+
+Maybe with a popup rule
+
+#+begin_src emacs-lisp
+(set-popup-rule! "^\\*ChatGPT\\*$" :size 0.5
+    :side 'bottom
+    :ttl nil
+    :select t)
+#+end_src
+
+* Footnotes
+
+[fn:1] For example, this is a footnote. But on website this should be rendered beside main text (as sidenotes).
