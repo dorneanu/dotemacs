@@ -36,4 +36,4 @@
 	url = https://github.com/fbkarsdorp/.emacs.d
 [submodule "phundrak-dotfiles"]
 	path = phundrak-dotfiles
-	url = https://github.com/Phundrak/dotfiles/
+	url = https://github.com/Phundrak/dotfiles
