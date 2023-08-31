@@ -37,3 +37,6 @@
 [submodule "phundrak-dotfiles"]
 	path = phundrak-dotfiles
 	url = https://github.com/Phundrak/dotfiles
+[submodule "ndw-dotfiles"]
+	path = ndw-dotfiles
+	url = https://gitlab.com/ndw/dotfiles.git
