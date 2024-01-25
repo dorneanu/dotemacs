@@ -5,5 +5,5 @@ Either way you can easily clone this repository and the submodules using:
 git clone --recursive https://github.com/dorneanu/dotemacs.git
 #+end_src
 
-Then you can use use ~grep / ripgrep~ to search for certain functionalities
+rThen you can use use ~grep / ripgrep~ to search for certain functionalities
 if you're not sure how to implement them right.
