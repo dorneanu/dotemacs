@@ -37,6 +37,18 @@
 [submodule "phundrak-dotfiles"]
 	path = phundrak-dotfiles
 	url = https://github.com/Phundrak/dotfiles
-[submodule "ndw-dotfiles"]
-	path = ndw-dotfiles
-	url = https://gitlab.com/ndw/dotfiles.git
+[submodule "mpereira-emacs.d"]
+	path = mpereira-emacs.d
+	url = https://github.com/mpereira/.emacs.d
+[submodule "alexpeits-emacs.d"]
+	path = alexpeits-emacs.d
+	url = https://github.com/alexpeits/emacs.d
+[submodule "karatasfurkan-emacs.d"]
+	path = karatasfurkan-emacs.d
+	url = https://github.com/KaratasFurkan/.emacs.d
+[submodule "matthewzmd-emacs.d"]
+	path = matthewzmd-emacs.d
+	url = https://github.com/MatthewZMD/.emacs.d
+[submodule "seagle0128-emacs.d"]
+	path = seagle0128-emacs.d
+	url = https://github.com/seagle0128/.emacs.d
