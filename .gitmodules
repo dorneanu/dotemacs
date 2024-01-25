@@ -4,27 +4,9 @@
 [submodule "dakra-dmacs"]
 	path = dakra-dmacs
 	url = https://github.com/dakra/dmacs
-[submodule "novoid-dotemacs"]
-	path = novoid-dotemacs
-	url = https://github.com/novoid/dot-emacs
-[submodule "protesilaos-dotfiles"]
-	path = protesilaos-dotfiles
-	url = https://git.sr.ht/~protesilaos/dotfiles/
-[submodule "rasendubi-dotfiles"]
-	path = rasendubi-dotfiles
-	url = https://github.com/rasendubi/dotfiles
-[submodule "rememberYou-emacs.d"]
-	path = rememberYou-emacs.d
-	url = https://github.com/rememberYou/.emacs.d
 [submodule "SqrtMinusOne-dotfiles"]
 	path = SqrtMinusOne-dotfiles
 	url = https://github.com/SqrtMinusOne/dotfiles
-[submodule "sriramkswamy-dotemacs"]
-	path = sriramkswamy-dotemacs
-	url = https://github.com/sriramkswamy/dotemacs
-[submodule "tecosaur-emacs"]
-	path = tecosaur-emacs
-	url = https://github.com/tecosaur/emacs-config
 [submodule "howardabrams-dotfiles"]
 	path = howardabrams-dotfiles
 	url = https://github.com/howardabrams/dot-files
@@ -34,24 +16,42 @@
 [submodule "fbkarsdorp-emacsd"]
 	path = fbkarsdorp-emacsd
 	url = https://github.com/fbkarsdorp/.emacs.d
-[submodule "phundrak-dotfiles"]
-	path = phundrak-dotfiles
-	url = https://github.com/Phundrak/dotfiles
 [submodule "mpereira-emacs.d"]
 	path = mpereira-emacs.d
 	url = https://github.com/mpereira/.emacs.d
-[submodule "alexpeits-emacs.d"]
-	path = alexpeits-emacs.d
-	url = https://github.com/alexpeits/emacs.d
 [submodule "karatasfurkan-emacs.d"]
 	path = karatasfurkan-emacs.d
 	url = https://github.com/KaratasFurkan/.emacs.d
 [submodule "matthewzmd-emacs.d"]
 	path = matthewzmd-emacs.d
 	url = https://github.com/MatthewZMD/.emacs.d
-[submodule "seagle0128-emacs.d"]
-	path = seagle0128-emacs.d
-	url = https://github.com/seagle0128/.emacs.d
 [submodule "fbkarsdorp-emacs.d"]
 	path = fbkarsdorp-emacs.d
 	url = https://github.com/fbkarsdorp/.emacs.d
+[submodule "phundrak-dotfiles-all"]
+	path = phundrak-dotfiles-all
+	url = https://labs.phundrak.com/phundrak/dotfiles.git
+[submodule "prot-dotfiles"]
+	path = prot-dotfiles
+	url = https://github.com/protesilaos/dotfiles
+[submodule "seagle0128-emacs.d"]
+	path = seagle0128-emacs.d
+	url = https://github.com/seagle0128/.emacs.d
+[submodule "rememberYou-emacs.d"]
+	path = rememberYou-emacs.d
+	url = https://github.com/rememberYou/.emacs.d
+[submodule "sriramkswamy-dotemacs"]
+	path = sriramkswamy-dotemacs
+	url = https://github.com/sriramkswamy/dotemacs
+[submodule "rasendubi-dotfiles"]
+	path = rasendubi-dotfiles
+	url = https://github.com/rasendubi/dotfiles
+[submodule "novoid-dotemacs"]
+	path = novoid-dotemacs
+	url = https://github.com/novoid/dot-emacs
+[submodule "phundrak-config"]
+	path = phundrak-config
+	url = https://labs.phundrak.com/phundrak/dotfiles.git
+[submodule "alexpeits-emacs.d"]
+	path = alexpeits-emacs.d
+	url = https://github.com/alexpeits/emacs.d
