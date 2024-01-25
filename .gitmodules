@@ -52,3 +52,6 @@
 [submodule "seagle0128-emacs.d"]
 	path = seagle0128-emacs.d
 	url = https://github.com/seagle0128/.emacs.d
+[submodule "fbkarsdorp-emacs.d"]
+	path = fbkarsdorp-emacs.d
+	url = https://github.com/fbkarsdorp/.emacs.d
