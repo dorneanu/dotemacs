@@ -55,3 +55,6 @@
 [submodule "alexpeits-emacs.d"]
 	path = alexpeits-emacs.d
 	url = https://github.com/alexpeits/emacs.d
+[submodule "purcell-emacs.d"]
+	path = purcell-emacs.d
+	url = https://github.com/purcell/emacs.d
