@@ -64,3 +64,6 @@
 [submodule "xenodium-dotsies"]
 	path = xenodium-dotsies
 	url = https://github.com/xenodium/dotsies
+[submodule "tecosaur-emacs"]
+	path = tecosaur-emacs
+	url = https://github.com/tecosaur/emacs-config
