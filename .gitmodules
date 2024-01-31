@@ -58,3 +58,9 @@
 [submodule "purcell-emacs.d"]
 	path = purcell-emacs.d
 	url = https://github.com/purcell/emacs.d
+[submodule "jwiegley-emacs.d"]
+	path = jwiegley-emacs.d
+	url = https://github.com/jwiegley/dot-emacs
+[submodule "xenodium-dotsies"]
+	path = xenodium-dotsies
+	url = https://github.com/xenodium/dotsies
