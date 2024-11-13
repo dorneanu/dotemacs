@@ -67,3 +67,9 @@
 [submodule "tecosaur-emacs"]
 	path = tecosaur-emacs
 	url = https://github.com/tecosaur/emacs-config
+[submodule "larstvei-dotemacs"]
+	path = larstvei-dotemacs
+	url = https://github.com/larstvei/dot-emacs
+[submodule "minemacs"]
+	path = minemacs
+	url = https://github.com/abougouffa/minemacs
